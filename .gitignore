@@ -1,5 +1,6 @@
-## Release Folder ##
+## Release and build folder ##
 [Rr]elease/
+[Bb]uild
 
 # Eclipse #
 .metadata

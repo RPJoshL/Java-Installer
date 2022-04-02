@@ -1,4 +1,4 @@
-package tk.rpjosh.installer;
+package de.rpjosh.installer;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -12,7 +12,7 @@ import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 
-import tk.rpjosh.installer.InstallConfig.OSType;
+import de.rpjosh.installer.InstallConfig.OSType;
 
 public class InstallConfig {
 

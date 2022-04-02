@@ -1,4 +1,4 @@
-package tk.rpjosh.installer;
+package de.rpjosh.installer;
 
 import java.io.File;
 import java.io.IOException;

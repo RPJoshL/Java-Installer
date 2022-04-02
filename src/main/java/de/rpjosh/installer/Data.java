@@ -1,4 +1,4 @@
-package tk.rpjosh.installer;
+package de.rpjosh.installer;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;

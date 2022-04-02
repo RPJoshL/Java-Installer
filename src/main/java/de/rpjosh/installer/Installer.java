@@ -1,4 +1,4 @@
-package tk.rpjosh.installer;
+package de.rpjosh.installer;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 
 import mslinks.ShellLink;
-import tk.rpjosh.installer.InstallConfig.OSType;
+import de.rpjosh.installer.InstallConfig.OSType;
 
 import static java.lang.System.setErr;
 import static java.util.prefs.Preferences.systemRoot;
