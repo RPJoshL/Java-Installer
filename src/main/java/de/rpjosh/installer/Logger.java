@@ -3,12 +3,11 @@ package de.rpjosh.installer;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-class Data {
+public class Logger {
 
-	private InstallConfig conf;
+	private boolean debug = true;
 	
-	Data(InstallConfig conf) {
-		this.conf = conf;
+	public Logger() {
 	}
 	
 	/**
@@ -24,29 +23,17 @@ class Data {
 		
 		String commandLine = "";
 		// if the debug mode isn't enabled print only the first line of the message (without the location)
-		if (true) commandLine = anz + " - " + location;
+		if (debug) commandLine = anz + " - " + location;
 		else commandLine = anzSimple;
 		
 		
-		if (v.equals("d")) {
-			//logger.debug(anz); loggerSimple.debug(anzSimple);
-			System.out.println("[D] " + commandLine);
-		}
+		if (v.equals("d"))	System.out.println("[D] " + commandLine);
 		
-		if (v.equals("i")) {
-			//logger.info(anz); loggerSimple.info(anzSimple);
-			System.out.println("[I] " + commandLine);
-		}
+		if (v.equals("i"))	System.out.println("[I] " + commandLine);
 		
-		if (v.equals("w")) {
-			//logger.warn(anz); loggerSimple.warn(anzSimple);
-			System.out.println("[W] " + commandLine);
-		}
+		if (v.equals("w"))	System.out.println("[W] " + commandLine);
 		
-		if (v.equals("e")) {
-			//logger.error(anz); loggerSimple.error(anzSimple);
-			System.out.println("[E] " + commandLine);
-		}
+		if (v.equals("e"))	System.out.println("[E] " + commandLine);
 	}
 	
 	
@@ -63,4 +50,5 @@ class Data {
 		ex.printStackTrace(pw);
 		log("e", sw.toString(), location);
 	}
+	
 }

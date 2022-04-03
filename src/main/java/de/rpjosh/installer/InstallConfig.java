@@ -6,13 +6,12 @@ import java.io.File;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
-
-import de.rpjosh.installer.InstallConfig.OSType;
 
 public class InstallConfig {
 
@@ -26,7 +25,7 @@ public class InstallConfig {
 	ArrayList<String> directorysInAppData = new ArrayList<String>();
 	Map<String, String> fontsToInstall = new HashMap<String, String>();
 	
-	// Alle Pfade, die vom Programm genutzt werden //
+	// All paths used by the program //
 	private String desktopDir = null;
 	private String applicationDir = null;
 	private String configDir = null;
@@ -39,25 +38,25 @@ public class InstallConfig {
 	private boolean offline = false;
 	private String portableMainDir = "";
 	
-	private Data data;
+	private Logger logger;
 	
-	/* Ordnerstruktur bei Portable:
+	/* File structure when portable:
 	.
 	+-- _Programm
 	|   +-- _pics
-	|   +-- BeMa.jar
-	|	+-- portable		<- Dadurch wird portable ersichtlich
+	|   +-- MyProgram.jar
+	|	+-- portable		<- Through this file portable will be annotated
 	+-- _AppData
 	|   +-- _config
 	|	|	+-- conf.txt
 	|	+-- _logs
-	|	|	+-- BeMa.log
-	|	|	+-- BeMa_Simple.log
+	|	|	+-- MyProgram.log
+	|	|	+-- MyProgram_simple.log
 	+-- ShortcutToJar
 	
 	*/
 	
-	// Programm zum Downloaden //
+	// Settings for program download //
 	protected String downloadURL = null;
 	protected boolean addVersion = false;
 	protected String urlEnding = "";
@@ -115,7 +114,7 @@ public class InstallConfig {
 	 */
 	public InstallConfig(String company, String version, String applicationNameShort, String applicationNameLong) {
 		
-		data = new Data(this);
+		logger = new Logger();
 		this.company = company;
 		this.version = version;
 		this.applicationNameShort = applicationNameShort;
@@ -160,7 +159,7 @@ public class InstallConfig {
 	protected String getApplicationNameShort() { return applicationNameShort; }
 	protected String getApplicationNameLong() { return applicationNameLong; }
 	
-	protected Data getData() { return data; }
+	protected Logger getLogger() { return logger; }
 	protected boolean getIsUser() { return isUser; }
 	protected boolean getIsPortable() { return isPortable; }
 	
@@ -247,7 +246,7 @@ public class InstallConfig {
 		desktopWindowsICO = windowsICO;
 		desktopLinuxPNG = linuxPNG;		
 		
-		createProgramDirs(new ArrayList<String>() {{  add("pics/"); }});
+		createProgramDirs((List<String>) Arrays.asList(new String[] {"pics/"}));
 		desktopKeywords = keywords;
 	}
 	protected String getDesktopWindowsICO() { return desktopWindowsICO; }
@@ -442,12 +441,12 @@ public class InstallConfig {
 					rtc = output + "/";
 				}
 			} catch (Exception ex) {
-				data.log("w", "Location of Desktop could not be determed. Using default Location: Desktop", "getDesktopDir");
+				logger.log("w", "Location of Desktop could not be determed. Using default Location: Desktop", "getDesktopDir");
 				rtc += "/Desktop/";
 			}
 			
 		} else {
-			data.log("w", "Plattform is not supported", "getDesktopDir"); return null;
+			logger.log("w", "Plattform is not supported", "getDesktopDir"); return null;
 		}
 		
 		this.desktopDir = rtc;
@@ -483,9 +482,9 @@ public class InstallConfig {
 	/**
 	 * Creates the given directory in the configuration directory
 	 * 
-	 * @param directorys	a list with all the directorys to create. This are relative paths -{@literal >} logs/ or config/
+	 * @param directorys	a list with all the directories to create. This are relative paths -{@literal >} logs/ or config/
 	 */
-	public void createConfigDirs(ArrayList<String> directorys) {
+	public void createConfigDirs(List<String> directorys) {
 		
 		directorysInConfig.addAll(directorys);
 		directorysInConfig.add("");
@@ -494,7 +493,7 @@ public class InstallConfig {
 	
 	private void initConfigDir() {
 		
-		if (!isInstallationStarted) return; 	// vor dem Start der Installation werden noch keine Ordner erstellt
+		if (!isInstallationStarted) return; 	// before the start of the installation no folders will be created
 		
 		String rtc = this.configDir;
 		
@@ -503,7 +502,7 @@ public class InstallConfig {
 				File currentDirectory = new File(rtc + direcotory);
 				if (!currentDirectory.exists()) new File(rtc + direcotory).mkdirs();
 			}
-		} catch (Exception ex) { data.log("e", ex, "getConfigDir"); }
+		} catch (Exception ex) { logger.log("e", ex, "getConfigDir"); }
 	}
 	
 	
@@ -539,9 +538,9 @@ public class InstallConfig {
 	/**
 	 * Creates the given directory in the application directory
 	 * 
-	 * @param directorys	a list with all the directorys to create. This are relative paths -{@literal >} logs/ or config/
+	 * @param directorys	a list with all the directories to create. This are relative paths -{@literal >} logs/ or config/
 	 */
-	public void createProgramDirs(ArrayList<String> directorys) {
+	public void createProgramDirs(List<String> directorys) {
 		
 		this.directorysInAppData.addAll(directorys);
 		directorysInAppData.add("");
@@ -564,13 +563,13 @@ public class InstallConfig {
 				File currentDirectory = new File(rtc + directory);
 				if (!currentDirectory.exists()) new File(rtc + directory).mkdirs();
 			}
-		} catch (Exception ex) { data.log("e", ex, "initApplicationDir"); }
+		} catch (Exception ex) { logger.log("e", ex, "initApplicationDir"); }
 	}
 	
 	/**
 	 * Returns the main directory of the portable installation
 	 * 
-	 * @return the path: C:/Users/de03710/BeMa/
+	 * @return the path: C:/Users/de03710/RPdb/
 	 */
 	protected String getPortableDir() {
 		return this.portableMainDir;
@@ -583,7 +582,7 @@ public class InstallConfig {
 	 * @param pathToWrite 	the destination path
 	 * @param logError 		if an error message should be displayed
 	 * 
-	 * @return 				if the resource was sucessfully extracted
+	 * @return 				if the resource was successfully extracted
 	 */
 	protected boolean getResource(String pathInJar, String pathToWrite, boolean logError) {
 		
@@ -599,7 +598,7 @@ public class InstallConfig {
 			return false;
 
 		} catch (Exception ex ) { 
-			if (logError) data.log("w", ex, "getResource");
+			if (logError) logger.log("w", ex, "getResource");
 			return false;
 		}
 		
@@ -633,7 +632,7 @@ public class InstallConfig {
 		try {
 			location = new File(getClass().getProtectionDomain().getCodeSource().getLocation().toURI().getPath()).getAbsolutePath();
 		} catch (URISyntaxException ex) {
-			data.log("w", ex, "getLocationOfJarFile");
+			logger.log("w", ex, "getLocationOfJarFile");
 			location = new File(getClass().getProtectionDomain().getCodeSource().getLocation().getPath()).getAbsolutePath();
 		}
 		
@@ -655,7 +654,7 @@ public class InstallConfig {
 	 * @param sizeInMb	the maximum size in megabye
 	 */
 	public void setMaxHeapSize(int sizeInMb) {
-		if (sizeInMb < 2) data.log("w", "The maximum heap size must be greater or equal 2 megabyte", "setMaxHeapSize");
+		if (sizeInMb < 2) logger.log("w", "The maximum heap size must be greater or equal 2 megabyte", "setMaxHeapSize");
 		else this.maxHeapSize = sizeInMb;
 	}
 	

@@ -6,7 +6,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
-import java.io.ObjectInputFilter.Config;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -16,7 +15,9 @@ import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -36,36 +37,33 @@ import static java.util.prefs.Preferences.systemRoot;
 public class Installer {
 
 	private InstallConfig conf;
-	private Data data;
+	private Logger logger;
 	
 	public int error = 0;
 	
 	public Installer(InstallConfig conf) {
 		this.conf = conf;
-		this.data = conf.getData();
+		this.logger = conf.getLogger();
 	}
 	
 	/**
 	 * Starts the installation of the program
 	 * 
- 	 * @param args 		If the program has to be restarted you can specify here the parameters with which the program should been restarted.
+ 	 * @param args 		If the program has to be restarted you can specify the parameters with which the program should bee restarted.
  	 * 					These are normally the parameters which were specified when launching your installer
 	 */
 	public void installProgramm(String[] args) {
 		
 		conf.isInstallationStarted = true;
 		
-		// überprüfe, ob Root rechte vorhanden sind
+		// check if the user has root rights
 		if (!conf.getIsPortable() && !conf.getIsUser()) {
 			if (!this.checkRoot()) {
-				System.out.println("Zur Installation dieses Programm werden Administrator / Root Rechte benötigt.\n\n"
-						+ "Falls du keine solchen Rechte hast, kann das Programm auch portable oder nur für diesen Benutzer installiert werden.\n"
-						+ "Für eine weitere Hilfe führe dieses Programm mit dem Parameter --help aus.");
+				System.out.println(Tr.get("root_rights_required"));
 				error = -1;
 				
 				if ( (InstallConfig.getOsType() == OSType.WINDOWS || InstallConfig.getOsType() == OSType.LINUX) && !conf.getQuiet()) {
-					System.out.print("\nFalls du doch solche Rechte hast, kann das Programm automatisch versuchen, die Installation mit Administratorrechten zu starten.\n"
-							+ "Möchtest du das Programm mit Administratorrechten neustarten (Y/N)?: ");
+					System.out.println(Tr.get("root_askForRestart") + ": ");
 				
 					try {
 						BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
@@ -83,7 +81,7 @@ public class Installer {
 						
 						error = -2; return;
 						
-					} catch (Exception ex) { data.log("e", ex, "installProgramm"); 
+					} catch (Exception ex) { logger.log("e", ex, "installProgramm"); 
 						error = -3; return;
 					}
 				}
@@ -94,20 +92,20 @@ public class Installer {
 		
 		try { Thread.sleep(10); } catch (Exception ex) { }
 		
-		if (conf.getIsUser() && InstallConfig.getOsType() != OSType.WINDOWS) { System.out.println("A user installation is only available under windows"); error = -10; }
+		if (conf.getIsUser() && InstallConfig.getOsType() != OSType.WINDOWS) { System.out.println("userInstallation_notAvailable"); error = -10; }
 		
-		System.out.println("\nStarting the installation of " + conf.getApplicationNameShort() + " (version " + conf.getVersion() + ").\n");
+		System.out.println("\n" + Tr.get("installation_start", conf.getApplicationNameShort(), conf.getVersion()) + "\n");
 		
 		// all running instances will be killed
 		this.killRunningInstances();
 		
-		System.out.print("Determine architekture and operating system: ");
+		System.out.print(Tr.get("installation_architekture") + ": ");
 		String aarch = this.getVersionOfProgramm();
 		System.out.println(aarch);
 		
 		// copies or downloads the file
 		if (conf.downloadURL == null) {
-			data.log("w", "no file to download or copy specified", "installProgramm");
+			logger.log("w", "no file to download or copy specified", "installProgramm");
 			error = -5;
 			return;
 		}
@@ -115,57 +113,58 @@ public class Installer {
 		String jarFile = "";
 		
 		if (!conf.getOffline()) {
-			System.out.print("Downloading file: ");
+			System.out.print(Tr.get("installation_download") + ": ");
 			jarFile = this.downloadFile(conf.downloadURL, conf.addVersion, conf.urlEnding);
 			if (error < 0) return;
-			System.out.println("\rDownloading file: successful downloaded");
+			System.out.println("\r" + Tr.get("installation_download_success") + "   ");
 		} else {
 			File fileOffline = new File(conf.downloadURL);
 			
 			if (!fileOffline.exists() || fileOffline.length() < ( 1024 * 1024)) {
-				System.out.println("The given file is invalid!");
+				System.out.println(Tr.get("installation_download_invalid"));
 				error = -11; return;
 			}
 			jarFile = fileOffline.getAbsolutePath();
 		}
 		
 		if (conf.getIsPortable()) {
-			System.out.println("\nProgram will be installed portable under: " + conf.getPortableDir());
+			System.out.println("\n" + Tr.get("installation_portable_start", conf.getPortableDir()));
 			
 			File portableDir = new File(conf.getPortableDir());
 			if (!portableDir.exists()) {
-				System.out.print("Directory does not exist. Creating directory: ");
+				System.out.print(Tr.get("installation_portable_createDirectory") + ": ");
+				System.out.print(": ");
 				if (!portableDir.mkdirs()) {
-					System.out.print("No authorization!");
+					System.out.print(Tr.get("noAuthorization") + "!");
 					error = -12; return;
-				} else System.out.print("created");
+				} else System.out.print(Tr.get("created"));
 			}
 			
 			conf.setPortable(portableDir.getAbsolutePath().replace("\\", "/") + "/");	
 		}
 				
-		System.out.print("\nCopy jar file: ");
+		System.out.print("\n" + Tr.get("installation_copyJar") + ": ");
 		try {
 			FileUtils.copyInputStreamToFile(new FileInputStream(new File(jarFile)), new File(conf.getApplicationDir() + conf.getApplicationNameShort() + ".jar"));
 		} catch (Exception ex) {
-			System.out.println("failed.\n\nError message: ");
+			System.out.println(Tr.get("failed") + ".\n\n" + Tr.get("errorMessage") + ": ");
 			ex.printStackTrace();
 			error = -13; return;
 		}
-		System.out.println("successful\n");
+		System.out.println(Tr.get("successful") + "\n");
 		
-		// sets the path for the jar file for the shortcuts
+		// set the path for the jar file for the shortcuts
 		conf.setLocationOfJarFile(conf.getApplicationDir() + conf.getApplicationNameShort() + ".jar");
 		
-		// Icon für die Systemsteuerung für die Deinstallation setzen -> wird immer gesetzt
+		// icon for the control panel for the uninstallation -> set always
 		if (conf.createIconForDeletion) {
-			conf.createProgramDirs(new ArrayList<String>() {{  add("pics/"); }});
+			conf.createProgramDirs((List<String>) Arrays.asList(new String[] {"pics/"}));
 			conf.getResource(conf.iconForDeletionPath, conf.getApplicationDir() + "pics/uninstall.ico");
 		}
 		
 		if (conf.getIsPortable()) {
 			
-			System.out.print("Creating required files: ");
+			System.out.print(Tr.get("installation_createFiles") + ": ");
 			try {
 				// creates a file "portable" in the application directory //
 				FileWriter fw = new FileWriter(conf.getApplicationDir() + "portable");
@@ -179,7 +178,7 @@ public class Installer {
 					// create a launch script
 					this.createLauncher("Programm/" + conf.getApplicationNameShort() + ".jar", conf.getPortableDir() + conf.getApplicationNameShort(), false);
 					
-					//Datei ausführbar machen
+					// make the file executable
 					Process p = new ProcessBuilder("bash", "-c", "chmod +x " + conf.getPortableDir() + conf.getApplicationNameShort()).start();
 					p.waitFor(5000, TimeUnit.SECONDS);
 					
@@ -188,12 +187,12 @@ public class Installer {
 					this.createDesktopShortcut(conf.getPortableDir() + conf.getApplicationNameShort() + ".lnk", "");
 				}
 
-				System.out.println("erfolgreich");
+				System.out.println(Tr.get("successful"));
 
-			} catch (Exception ex) { System.out.println("fehlgeschlagen"); error = -14; return; }
+			} catch (Exception ex) { System.out.println(Tr.get("failed")); error = -14; return; }
 			
 		} else if (conf.getIsUser()) {
-			// erstelle eine Textdatei User im Programmverzeichnis, damit erkenbar ist, dass das Programm nur für den aktuellen Benutze instsalliert worden ist. //
+			// creates a file "userInstallation" in the application directory //
 			try {
 				FileWriter fw = new FileWriter(conf.getApplicationDir() + "userInstallation");
 				PrintWriter pw = new PrintWriter(fw);
@@ -201,12 +200,12 @@ public class Installer {
 				pw.println("Therefore please do not delete this inconspicuous file!");
 				pw.flush();
 				pw.close();
-				System.out.println("Execute other commands...");
+				System.out.println(Tr.get("installation_executeOtherCommands") + "...");
 				this.registerApplication(conf.getIsUser());
-			} catch (Exception ex) { System.out.println("Creation of the files failed..."); error = -15; return; }
+			} catch (Exception ex) { System.out.println(Tr.get("installation_createFilesFailed") + "..."); error = -15; return; }
 
 		} else {
-			System.out.println("Execute other commands...");
+			System.out.println(Tr.get("installation_executeOtherCommands") + "...");
 			
 			// the program will be created
 			this.registerApplication(conf.getIsUser());
@@ -216,12 +215,12 @@ public class Installer {
 		
 		if (error < 0) return;
 		
-		System.out.println("\nInstallation was completed successfully\n");
+		System.out.println("\n" + Tr.get("installation_executionSuccessful") +  "\n");
 		
 	}
 	
 	/**
-	 * Beendet alle noch möglicherweise laufenden Instanzen des Programms (z.B. bei einem Update)
+	 * Kills all running instances (for a update)
 	 */
 	private void killRunningInstances() {
 		
@@ -235,15 +234,16 @@ public class Installer {
 				Process p = new ProcessBuilder("bash", "-c", "pkill -9 -f '" + conf.getApplicationNameShort() + ".jar'").start();
 				p.waitFor(5, TimeUnit.SECONDS);
 			}
-		} catch (Exception ex) { /* nicht nötig */ }
+		} catch (Exception ex) { /* not required */ }
 
 	}
 
 	
 	/**
-	 * Erstellt eine Verknüpfung zur Jar-Datei
-	 * @param target Wo die Verknüpfung erstellt werden soll, sowie dessen Dateinamen (z.B. /home/user/Desktop/BeMa.desktop oder C:/User/de03710/Desktop/hi.moin)
-	 * @param args zusätzliche Parameter wie -u hi -p secret -w
+	 * Creates a shortcut to the jar file
+	 * 
+	 * @param target	Where to create the shortcut and the filename (z.B. /home/user/Desktop/MyApp.desktop oder C:/User/de03710/Desktop/hi.moin)
+	 * @param args 		Additional parameters how "--minimized"
 	 */
 	private void createDesktopShortcut(String target, String args) {
 		
@@ -286,7 +286,7 @@ public class Installer {
 			}
 				
 		} catch (Exception ex) {
-			data.log("e", ex, "createDesktopShortcut"); 
+			logger.log("e", ex, "createDesktopShortcut"); 
 		}
 	}
 	
@@ -295,13 +295,13 @@ public class Installer {
 		
 		if (InstallConfig.getOsType() == OSType.WINDOWS) {
 			
-			// Erstellung eines Links, damit das Proramm von überall aufgerufen werden kann //
+			// Creates a Link that the program can be launched from everywhere //
 			this.createLauncher("", "", true);
 			// create also an link for the %PATH% variable
 			if (conf.createPathVariable) this.createLauncher("", conf.getApplicationDir() + "path/" + conf.getApplicationNameShort() + ".bat", true);
 
 			
-			// zuerst wird eine Dekstopverknüpfung erstellt //
+			// in the first step a desktop shortcut will be created //
 			if (conf.getCreateDesktopEntry()) {
 				
 				if (userInstallation) {
@@ -309,21 +309,21 @@ public class Installer {
 					destination += conf.getApplicationNameShort() + ".lnk"; 
 					createDesktopShortcut(destination, "");	
 				} else {
-					// es wird eine Verknknüpfung im Öffentlichen Desktop erstellt
+					// shortcut in the public desktop
 					String destination = System.getenv("public").replace("\\", "/") + "/Desktop/";
 					destination += conf.getApplicationNameShort() + ".lnk"; 
 					createDesktopShortcut(destination, "");	
 				}
 				
-				// im nächsten Schritt wird eine Verknüpfung in das Startmenü aufgenommenn //
+				// In the next step a shortcut in the start menu will be created //
 				String locationStartMenu = "";
 				if (userInstallation) {
-					locationStartMenu = System.getenv("APPDATA").replace("\\", "/") + "/Microsoft/Windows/Start Menu/Programs/";
+					locationStartMenu = System.getenv("APPlogger").replace("\\", "/") + "/Microsoft/Windows/Start Menu/Programs/";
 				} else {
 					locationStartMenu = System.getenv("ALLUSERSPROFILE").replace("\\", "/") + "/Microsoft/Windows/Start Menu/Programs/";
 				}
 
-				if (!new File(locationStartMenu).exists()) data.log("w", "Start Menu folder \"" + locationStartMenu + "\" does not exist!", "registerApplication");
+				if (!new File(locationStartMenu).exists()) logger.log("w", "Start Menu folder \"" + locationStartMenu + "\" does not exist!", "registerApplication");
 				else {
 					locationStartMenu += conf.getCompany() + "/";
 					new File(locationStartMenu).mkdirs();
@@ -334,7 +334,7 @@ public class Installer {
 				
 			}
 			
-			// es muss noch ein uninstall Schlüssel in die Registry geschrieben werden, um über die Systemsteuerung alles deinstallieren zu können //
+			// an uninstall keys has to be written to the registry, for uninstallation purposes in the system control //
 			String iconPath = conf.getApplicationDir() + "pics/uninstall.ico";
 			String locationRegistry = "";
 			
@@ -356,7 +356,7 @@ public class Installer {
 			String locationRegistryPath = "";
 			if (conf.createPathVariable) {
 				
-				// adding support for "start RPdb"
+				// adding support for "start MyProgram"
 				locationRegistryPath += "$REGISTRYPATH$" + conf.getApplicationNameShort() + ".exe";
 				String batchFilePath = 
 						"reg add \"" + locationRegistryPath + "\" /f \n"
@@ -384,7 +384,7 @@ public class Installer {
 			}
 
 			try {
-				// es wird die Batch-Datei erstellt, und anschließend ausgeführt
+				// creating a batch file and execute the commands
 				File batchMakeRegeditEntry = File.createTempFile("installApplication", ".bat");
 				
 				FileWriter fwFile = new FileWriter(batchMakeRegeditEntry);
@@ -395,17 +395,17 @@ public class Installer {
 				pwFile.close();
 
 				Process p = new ProcessBuilder("cmd.exe", "/C", batchMakeRegeditEntry.getAbsolutePath()).start();
-				if (!p.waitFor(10, TimeUnit.SECONDS)) data.log("w", "Batch File which adds some Registry Keys timed out", "registerApplication");
+				if (!p.waitFor(10, TimeUnit.SECONDS)) logger.log("w", "Batch File which adds some Registry Keys timed out", "registerApplication");
 				
 			} catch (Exception ex) {
-				data.log("e", ex, "registerApplication (make regedit Entry)");
+				logger.log("e", ex, "registerApplication (make regedit Entry)");
 			}
 			
-			// nun muss noch ein uninstall Skript zur Verfügung gestellt werden //
+			// create a uninstall script //
 			String batchFileUninstall = "@echo off \n"
 					+ "wmic PROCESS Where \"name Like '%%java%%' AND CommandLine like '%%" + conf.getApplicationNameShort() + "%%'\" Call Terminate \n";
-			if (userInstallation) batchFileUninstall += "del \"%LOCALAPPDATA%";
-			else				  batchFileUninstall += "del \"%ProgramData%";
+			if (userInstallation) batchFileUninstall += "del \"%LOCALAPPlogger%";
+			else				  batchFileUninstall += "del \"%Programlogger%";
 			batchFileUninstall +=
 					  "\\Microsoft\\Windows\\Start Menu\\Programs\\" + conf.getCompany() + "\\" + conf.getApplicationNameShort() + "*\" /q \n"
 					+ "rd \"" + conf.getConfigDir().replace("/", "\\") + "\" /q /s \n"
@@ -438,7 +438,7 @@ public class Installer {
 					+ "pause\n";
 		
 			try {
-				// es wird die Batch-Datei erstellt
+				// creating the batch file
 				File uninstallFile = new File(conf.getApplicationDir() + "uninstall.bat");
 				
 				FileWriter fwFile = new FileWriter(uninstallFile);
@@ -449,30 +449,30 @@ public class Installer {
 				pwFile.close();
 
 			} catch (Exception ex) {
-				data.log("e", ex, "registerApplication (make uninstall Skript)");
+				logger.log("e", ex, "registerApplication (make uninstall Skript)");
 			}
 			
 		}
 		
 		if (InstallConfig.getOsType() == OSType.LINUX) {
 			
-			// keine Erstellung einer Verknüpfung, da Installer als root ausgeführt wird //
+			// create a shortcut because the installer is always run as root //
 			
-			if (!checkRoot()) { data.log("i", "Installer has to be run as a root user", "registerApplication" ); return; }
+			if (!checkRoot()) { logger.log("i", "Installer has to be run as a root user", "registerApplication" ); return; }
 			
-			// Erstellung einer Verknüpfung für das StartMenü //
+			// create a shortcut in the start menu //
 			if (conf.getCreateDesktopEntry()) {
 				String pathMenu = "/usr/share/applications/" + conf.getApplicationNameShort() + ".desktop";
 				this.createDesktopShortcut(pathMenu, "");
 			}
 			
-			// Erstellung eines Links, damit das Proramm von überall aufgerufen werden kann //
+			// create a link that the program can be executed from everywhere //
 			this.createLauncher("", "", true);
 			
-			// Create a systemd unit file //
+			// create a systemd unit file //
 			if (conf.createUnitFile) this.createUnitFile();
 			
-			// Create a uninstaller //
+			// create a uninstaller //
 			try {
 				String batchFileUninstall = "#!/bin/bash" + "\n"
 						+ "keepUserSettings=false" + "\n"
@@ -537,17 +537,18 @@ public class Installer {
 				p.waitFor(5000, TimeUnit.SECONDS);
 				
 			} catch (Exception ex) {
-				data.log("e", ex, "registerApplication (create Uninstall-Skript");
+				logger.log("e", ex, "registerApplication (create Uninstall-Skript");
 			}
 			
 		}
 	}
 	
 	/**
-	 * Erstellt einen ausführbaren Link zum launcher unter Linux und Windows (unter Windows wird dieses auch in path folder gelegt.
-	 * @param pathToLink Der Pfad zur .jar Datei. Ohne eine angabe wird der Aktuelle Pfad der Jar-Datei genommen
-	 * @param pathToCreate Wo die Datei abgelegt werden soll. Standardmäßig wird /usr/bin/nameOfProgram genommen
-	 * @param uninstaller Ob auch eine Uninstall-Option implementiert werden soll
+	 * Creates an executable link to the launcher under Linux and Windows (in Windows the path will also be created)
+	 * 
+	 * @param pathToLink	the path to the .jar file. Is this parameter empty, the actual set path will be considered
+	 * @param pathToCreate 	where the file should been placed. Defaulting to the path "/usr/bin/nameOfProgram"
+	 * @param uninstaller	if also an uninstall option should be implemented
 	 */
 	private void createLauncher(String pathToLink, String destination, boolean uninstaller) {
 		
@@ -631,7 +632,7 @@ public class Installer {
 				p.waitFor(5000, TimeUnit.SECONDS);
 				
 			} catch (Exception ex) {
-				data.log("w", "Could not create Link to Programm", "registerApplication (create Link)");
+				logger.log("w", "Could not create Link to Programm", "registerApplication (create Link)");
 			}
 		}
 		else if (InstallConfig.getOsType() == OSType.WINDOWS) {
@@ -756,7 +757,7 @@ public class Installer {
 				pwFile.close();
 				
 			} catch (Exception ex) {
-				data.log("w", "Could not create Link to Programm", "registerApplication (create Link)");
+				logger.log("w", "Could not create Link to Programm", "registerApplication (create Link)");
 			}
 		}
 	}
@@ -777,7 +778,7 @@ public class Installer {
 			p.waitFor();
 			BufferedReader buf = new BufferedReader(new InputStreamReader(p.getInputStream()));
 			String output = buf.readLine();
-			if (!output.equals("yes")) { data.log("d", "systemd was nout found on the machine -> don't create a service unit", "registerApplication (create Unit File)"); return; }
+			if (!output.equals("yes")) { logger.log("d", "systemd was nout found on the machine -> don't create a service unit", "registerApplication (create Unit File)"); return; }
 
 			// create the unit file
 			String 									s  = "[Unit]\n";
@@ -826,7 +827,7 @@ public class Installer {
 			}
 			
 		} catch (Exception ex) {
-			data.log("w", "Could not create a systemd unit file", "registerApplication (create Unit File)");
+			logger.log("w", "Could not create a systemd unit file", "registerApplication (create Unit File)");
 		}
 	}
 	
@@ -844,15 +845,16 @@ public class Installer {
 	}
 	
 	/**
-	 * Überprüft, ob ein Nutzer unter Linux oder Windows root Rechte hat
-	 * @return Ob de Nutzer Root Rechte hat
+	 * Checks if the user has administrative privileges in Linux and Windows
+	 * 
+	 * @return	if the user has root privileges
 	 */
 	private boolean checkRoot() {
 		
 		if (InstallConfig.getOsType() == OSType.WINDOWS) {
 			
-			// als erstes wird überprüft, ob der Nutzer sich überhaupt in einer Admin-Grupper befindet (zweiter Abschnitt wirft eine unvermeidbare Warnung)
-			// kann nur vermiden werden, wenn der Schlüssel HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft\Prefs in der Registry eingetragen wurde
+			// in the first step it will be check if the user is in the admin group (will print an unavoidable warning ...)
+			// only when setting the key HKEY_LOCAL_MACHINE\SOFTWARE\JavaSoft\Prefs in the registry no warning would be printed
 			boolean isAdminGroup = false;
 		    String groups[] = (new com.sun.security.auth.module.NTSystem()).getGroupIDs();
 		    for (String group : groups) {
@@ -861,8 +863,8 @@ public class Installer {
 		    
 		    if (!isAdminGroup) return false;
 		    
-			// Um herauszufinden, ob ein Benutzer das Programm mit Administratorprivelegien gestartet hat, wird versucht, System-Preferences zu schreiben.
-			// Falls hierbei ein Fehler auftritt, kann davon ausgegeangen werden, dass der entsprechende Nutzer keine Administratorprivelegien hat / das Programm nicht mit diesen gestartet hat
+			// to check if the user has started the installer with administrative privileges, a system property will be tried to write
+			// when an error occurs, the user has no administrative privileges / has the installer not started with these rights
 			Preferences preferences = systemRoot();
 			synchronized (System.err) {
 				setErr(new PrintStream(new OutputStream() {
@@ -898,17 +900,18 @@ public class Installer {
 			return false;
 			
 		} catch (Exception ex) {
-			data.log("w", ex, "checkRoot");
+			logger.log("w", ex, "checkRoot");
 			return false;
 		}
 	}
 	
 	/**
-	 * Lädt eine Datei von einem Webserver herunter (mit Basic-Auth support -> config)
-	 * @param url		 	die URL
-	 * @param addVersion 	ob das Betriebsystem und die Architektur der URL angehängt werden soll -> windows_x64
-	 * @param end		 	das Dateiende (die URL wird in diesem Fall ohne Dateiendung angegeben)
-	 * @return 				Der Pfad der heruntergeladenen Datei (bei Fehler: null + data.error)
+	 * Downloads a file from an Webserver (with bsic auth support -> set in config)
+	 * 
+	 * @param url		 	URL
+	 * @param addVersion 	if the architecture and bs should be added to the given URL -> windows_x64 | linux_arm32
+	 * @param end		 	the file ending (the URL will be set without an file ending)
+	 * @return 				the path of the downloaded file (when an error occurred: null + logger.error)
 	 */
 	private String downloadFile (String url2, boolean addVersion, String end) {
 
@@ -939,14 +942,14 @@ public class Installer {
 				// es muss nun parallel die bereits heruntergeladene Dateigröße ermittelt werden
 				ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 				double lenghtTmp = lenght;
-				Future future = scheduler.scheduleWithFixedDelay(() -> {
+				Future<?> future = scheduler.scheduleWithFixedDelay(() -> {
 					double actualLenghtOfFile = download.length();
 					actualLenghtOfFile = Math.round(actualLenghtOfFile / 1048576 * 100) / 100.0;
 					
 					double percent = Math.round(actualLenghtOfFile / lenghtTmp * 10000) / 100.0;
 					// add leading zeros
 					DecimalFormat f = new DecimalFormat("0.00");
-					System.out.print("\rDownloading file: " + f.format(percent) + "% (" + f.format(actualLenghtOfFile) + " MB / " + lenghtTmp + " MB)");
+					System.out.print("\r" + Tr.get("installation_download") + ": " + f.format(percent) + "% (" + f.format(actualLenghtOfFile) + " MB / " + lenghtTmp + " MB)");
 					;
 				}, 200, 450, TimeUnit.MILLISECONDS);
 				
@@ -961,12 +964,12 @@ public class Installer {
 				
 			} catch (Exception ex) {
 				System.out.println("fehler");
-				System.out.println("\nA error occured while downloading the file.\nPlease check your internet connection and try again later (URL: " + serverURL + ")");
+				System.out.println("\n" + Tr.get("installation_download_failed", serverURL));
 				error = -20;
-				data.log("e", ex, "downloadFile");
+				logger.log("e", ex, "downloadFile");
 			}
 		} catch (Exception ex) {
-			System.out.println("The determined URL was not found" + "(URL: " + serverURL + ")");
+			System.out.println(Tr.get("installation_download_urlNotFound", serverURL));
 			error = -21;
 		}
 		
@@ -975,14 +978,15 @@ public class Installer {
 	}
 	
 	/**
-	 * Gibt die zu herunterladende Version des Programms aus
-	 * @return den entsprechenden Dateinamen (z.B. windows_x64, linux_arm64)
+	 * Return the version of the program to download
+	 * 
+	 * @return 	filename how "windows_x64" or "linux_arm32"
 	 */
 	protected String getVersionOfProgramm() {
 		
 		String rtc  = "";
 		
-		// Verwendetes Betriebssystem ermitteln //
+		// operating system //
 		if (InstallConfig.getOsType() == OSType.WINDOWS) rtc += "windows";
 		else if (InstallConfig.getOsType() == OSType.LINUX) rtc += "linux";
 		else if (InstallConfig.getOsType() == OSType.MACOS) rtc += "mac";	
@@ -993,13 +997,13 @@ public class Installer {
 		
 		rtc += "_";
 		
-		// Architektur der CPU ermitteln //
+		// architecture of the CPU //
 		String aarch = System.getProperty("os.arch").toLowerCase();
 		if (aarch.contains("amd64")) rtc += "x64";
 		else if (aarch.equals("x86")) rtc += "x86";
 		else if (aarch.equals("arm64") || aarch.equals("aarch64")) rtc += "arm64";
 		else if (aarch.equals("arm")) rtc += "arm32";
-		//fals nichts zutrifft, aber Prozessor mit 64 endet, wird amd64 erwartet
+		// if no architecture matched, but ending with "64", expect amd64 
 		else if (aarch.endsWith("64")) rtc += "x64";
 		else {
 			System.out.println("CPU architecture could not been determined: " + aarch);
@@ -1024,7 +1028,7 @@ public class Installer {
 					batchFile += "reg add \"HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Fonts\" /v \"" + entry.getKey() + " (TrueType)\" /t REG_SZ /d \"" + path + entry.getKey() + ".ttf\" /f \n";
 				}
 				try {
-					// es wird die Batch-Datei erstellt, und anschließend ausgeführt
+					// create the batch file and make it executable
 					File batchMakeRegeditEntry = File.createTempFile("installApplication", ".bat");
 					
 					FileWriter fwFile = new FileWriter(batchMakeRegeditEntry);
@@ -1035,11 +1039,11 @@ public class Installer {
 					pwFile.close();
 
 					Process p = new ProcessBuilder("cmd.exe", "/C", batchMakeRegeditEntry.getAbsolutePath()).start();
-					if (!p.waitFor(10, TimeUnit.SECONDS)) data.log("w", "Batch File which adds Registry Keys for uninstallation not fully executed (timeout)", "registerApplication");
-				} catch (Exception ex) { data.log("e", ex, "installFonts"); }
+					if (!p.waitFor(10, TimeUnit.SECONDS)) logger.log("w", "Batch File which adds Registry Keys for uninstallation not fully executed (timeout)", "registerApplication");
+				} catch (Exception ex) { logger.log("e", ex, "installFonts"); }
 				
 			} else {
-				data.log("w", "Can't install fonts without admin privilegies in Windows -> skipping. You should mind a reinstall with Admin-Privelegis", "installFonts");
+				logger.log("w", "Can't install fonts without admin privilegies in Windows -> skipping. You should mind a reinstall with Admin-Privelegis", "installFonts");
 			}
 			
 		} else if (InstallConfig.getOsType() == OSType.LINUX) {
@@ -1048,7 +1052,7 @@ public class Installer {
 			if (this.checkRoot()) path = "/usr/share/fonts/truetype/";	
 			else path = System.getProperty("user.home") + "/.local/share/fonts/";
 			
-			// Verzeichnis erstellen, falls noch nicht vorhanden
+			// create directories when not present
 			new File(path).mkdirs();
 			
 			final String path_ = path;

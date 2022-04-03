@@ -1,12 +1,13 @@
 plugins {
     // Apply the java-library plugin to add support for Java Library
     id 'java-library'
+    id 'maven-publish'
 }
 
 // Set version of programm //
 
-version = "1.0.0"
-def version = "1.0.0"
+version = "1.0.1"
+def version = "1.0.1"
 
 group = "de.rpjosh"
 
@@ -18,7 +19,10 @@ targetCompatibility = 11
 
 // create a single .jar with all dependencies //
 task fatJar(type: Jar) {
+
 	classifier = ''
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	
     manifest {
         attributes( 'Implementation-Title': 'installer', 
         			'Implementation-Version': version,
@@ -32,14 +36,16 @@ task fatJar(type: Jar) {
         exclude "META-INF/*.DSA"
         exclude "META-INF/*.RSA"
     }
-    
     with jar
+	destinationDirectory.set(layout.buildDirectory.dir("dist")) 
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
     from sourceSets.main.allSource
 }
+//sourceSets.main.resources { srcDirs = ["src/main/java"]; exclude "**/*.java" }
+
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
     manifest {
@@ -60,15 +66,51 @@ artifacts {
 
 // the created jar file will be copied automatically into the release directory
 task copyJar(type: Copy) {
-   from file("$buildDir/libs/installer-" + version + ".jar"), file("$buildDir/libs/installer-" + version + "-javadoc.jar"), file("$buildDir/libs/installer-" + version + "-sources.jar")
+   from file("$buildDir/dist/installer-" + version + ".jar"), file("$buildDir/dist/installer-" + version + "-javadoc.jar"), file("$buildDir/dist/installer-" + version + "-sources.jar")
    into file("$buildDir/../release")
 }
 
 // build the maven repo file structure -> Javadoc can be used easily in eclipse
 task copyJarToMaven (type: Copy) {
-   from file("$buildDir/libs/installer-" + version + ".jar"), file("$buildDir/libs/installer-" + version + "-javadoc.jar"), file("$buildDir/libs/installer-" + version + "-sources.jar")
+   from file("$buildDir/dist/installer-" + version + ".jar"), file("$buildDir/dist/installer-" + version + "-javadoc.jar"), file("$buildDir/dist/installer-" + version + "-sources.jar")
    into file("$buildDir/../release/mavenRepo/de/rpjosh/installer/" + version) 
 }
+
+// publish to local maven repo
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+			artifactId = 'installer'
+			from components.java
+            pom {
+                name = 'Java-Installer'
+                description = 'A simple installation routine for your Java application'
+                url = 'https://git.rpjosh.de/RPJosh/Java-Installer'
+                licenses {
+                    license {
+                        name = 'The GNU General Public License, Version 3'
+                        url = 'https://www.gnu.org/licenses/gpl-3.0.html'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'RPJosh'
+                        name = 'RPJosh'
+                        email = 'RPjosh@rpjosh.de'
+                    }
+                }
+            }
+        }
+    }
+}
+
+
 
 build.finalizedBy copyJar
 build.finalizedBy copyJarToMaven

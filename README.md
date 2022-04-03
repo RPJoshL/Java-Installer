@@ -50,7 +50,7 @@ System.out.println(installer.getResponseCode());
 ```
 ___
 
-For a real life example you can take a look at the installer of [RPdb](https://git.rpjosh.tk/RPJosh/RPdb/src/branch/master/Program/Java/tk.rpjosh.rpdb.installer).
+For a real life example you can take a look at the installer of [RPdb](https://git.rpjosh.de/RPJosh/RPdb/src/branch/master/Program/Java/tk.rpjosh.rpdb.installer).
 
 # License
 This project is licensed under the GPLv3. Please see the [LICENSE](LICENSE) file for an full license.
