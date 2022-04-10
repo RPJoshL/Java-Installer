@@ -912,7 +912,7 @@ public class Installer {
 	 * @param end		 		the file ending (the URL will be set without an file ending)
 	 * @param ascForBasicAuth	when no basic auth credentials are given and the request gets a 401 response ask the user for credentials at the command line
 	 * 
-	 * @return 				the path of the downloaded file (when an error occurred: null + logger.error)
+	 * @return 					the path of the downloaded file (when an error occurred: null + logger.error)
 	 */
 	private String downloadFile (String url2, boolean addVersion, String end, boolean askForAuth) {
 
@@ -927,7 +927,7 @@ public class Installer {
 			// check if basic auth is required
 			if (con.getResponseCode() == HttpURLConnection.HTTP_UNAUTHORIZED) {
 				if (conf.authUsername == null || conf.authPassword == null) {
-					if (!askForAuth) { logger.log("e", "Baisc authentication required for downloading the file \"" + serverURL + "\"", ""); System.exit(-1); }
+					if (!askForAuth) { logger.log("e", "Baisc authentication required for downloading the file \"" + serverURL + "\"", ""); error = -40; return null; }
 					
 					char[] username = conf.authUsername;
 					char[] password = conf.authPassword;

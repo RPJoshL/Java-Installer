@@ -192,8 +192,6 @@ public class InstallConfig {
 		this.authUsername = basicAuthUser;
 		this.authPassword = basicAuthPassword;
 		this.allowAskForBasicAuth = askForBasicAuth;
-		
-		offline = false;
 	}
 	
 	/**
@@ -213,8 +211,6 @@ public class InstallConfig {
 		this.urlEnding = end;
 		this.addVersion = true;
 		this.allowAskForBasicAuth = askForBasicAuth;
-		
-		offline = false;
 	}
 	
 	/**
