@@ -33,7 +33,7 @@ public class Logger {
 		
 		if (v.equals("w"))	System.out.println("[W] " + commandLine);
 		
-		if (v.equals("e"))	System.out.println("[E] " + commandLine);
+		if (v.equals("e"))	System.err.println("[E] " + commandLine);
 	}
 	
 	
