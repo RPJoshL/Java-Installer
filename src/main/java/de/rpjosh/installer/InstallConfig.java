@@ -62,6 +62,7 @@ public class InstallConfig {
 	protected String urlEnding = "";
 	protected char[] authUsername = null;
 	protected char[] authPassword = null;
+	protected boolean allowAskForBasicAuth = false;
 	
 	private boolean createDesktopEntry = false;
 	private String desktopWindowsICO = "";
@@ -184,11 +185,14 @@ public class InstallConfig {
 	 * @param url					the URL
 	 * @param basicAuthUser			[ the user for the basic auth ]
 	 * @param basicAuthPassword		[ the passwort for the basic auth ]
+	 * @param askForBasicAuth		when no basic auth credentials are given and the request gets a 401 response ask the user for credentials at the command line
 	 */
-	public void setDownloadURLForProgramm(String url, char[] basicAuthUser, char[] basicAuthPassword) {
+	public void setDownloadURLForProgramm(String url, char[] basicAuthUser, char[] basicAuthPassword, boolean askForBasicAuth) {
 		this.downloadURL = url;
 		this.authUsername = basicAuthUser;
 		this.authPassword = basicAuthPassword;
+		this.allowAskForBasicAuth = askForBasicAuth;
+		
 		offline = false;
 	}
 	
@@ -199,14 +203,16 @@ public class InstallConfig {
 	 * @param url					die URL (without file extension) 
 	 * @param basicAuthUser			[ the user for the basic auth ]
 	 * @param basicAuthPassword		[ the passwort for the basic auth ]
+	 * @param askForBasicAuth		when no basic auth credentials are given and the request gets a 401 response ask the user for credentials at the command line
 	 * @param end					die file ending of the file (.jar)
 	 */
-	public void setDownloadURLForProgramm(String url, char[] basicAuthUser, char[] basicAuthPassword,  String end) {
+	public void setDownloadURLForProgramm(String url, char[] basicAuthUser, char[] basicAuthPassword, boolean askForBasicAuth, String end) {
 		this.downloadURL = url;
 		this.authUsername = basicAuthUser;
 		this.authPassword = basicAuthPassword;
 		this.urlEnding = end;
 		this.addVersion = true;
+		this.allowAskForBasicAuth = askForBasicAuth;
 		
 		offline = false;
 	}

@@ -14,7 +14,6 @@ import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
@@ -94,7 +93,7 @@ public class Installer {
 		
 		if (conf.getIsUser() && InstallConfig.getOsType() != OSType.WINDOWS) { System.out.println("userInstallation_notAvailable"); error = -10; }
 		
-		System.out.println("\n" + Tr.get("installation_start", conf.getApplicationNameShort(), conf.getVersion()) + "\n");
+		System.out.println(Tr.get("installation_start", conf.getApplicationNameShort(), conf.getVersion()) + "\n");
 		
 		// all running instances will be killed
 		this.killRunningInstances();
@@ -114,7 +113,7 @@ public class Installer {
 		
 		if (!conf.getOffline()) {
 			System.out.print(Tr.get("installation_download") + ": ");
-			jarFile = this.downloadFile(conf.downloadURL, conf.addVersion, conf.urlEnding);
+			jarFile = this.downloadFile(conf.downloadURL, conf.addVersion, conf.urlEnding, conf.getQuiet() ? false : conf.allowAskForBasicAuth);
 			if (error < 0) return;
 			System.out.println("\r" + Tr.get("installation_download_success") + "   ");
 		} else {
@@ -906,14 +905,16 @@ public class Installer {
 	}
 	
 	/**
-	 * Downloads a file from an Webserver (with bsic auth support -> set in config)
+	 * Downloads a file from an Webserver (with basic auth support -> set in config)
 	 * 
-	 * @param url		 	URL
-	 * @param addVersion 	if the architecture and bs should be added to the given URL -> windows_x64 | linux_arm32
-	 * @param end		 	the file ending (the URL will be set without an file ending)
+	 * @param url		 		URL
+	 * @param addVersion 		if the architecture and BS should be added to the given URL -> windows_x64 | linux_arm32
+	 * @param end		 		the file ending (the URL will be set without an file ending)
+	 * @param ascForBasicAuth	when no basic auth credentials are given and the request gets a 401 response ask the user for credentials at the command line
+	 * 
 	 * @return 				the path of the downloaded file (when an error occurred: null + logger.error)
 	 */
-	private String downloadFile (String url2, boolean addVersion, String end) {
+	private String downloadFile (String url2, boolean addVersion, String end, boolean askForAuth) {
 
 		String serverURL = conf.downloadURL;
 		
@@ -922,24 +923,54 @@ public class Installer {
 		try {
 			URL url = new URL(serverURL);
 	        HttpURLConnection con = (HttpURLConnection) url.openConnection();
-	        if (conf.authUsername != null && conf.authPassword != null) {
+	        
+			// check if basic auth is required
+			if (con.getResponseCode() == HttpURLConnection.HTTP_UNAUTHORIZED) {
+				if (conf.authUsername == null || conf.authPassword == null) {
+					if (!askForAuth) { logger.log("e", "Baisc authentication required for downloading the file \"" + serverURL + "\"", ""); System.exit(-1); }
+					
+					char[] username = conf.authUsername;
+					char[] password = conf.authPassword;
+					
+					System.out.println("\n" + Tr.get("basicAuthRequired"));
+					
+					if (System.console() == null) { System.out.println(Tr.get("noConsole")); System.exit(-1); }	
+					if (username == null) {
+						System.out.print(Tr.get("username") + ": ");
+						username = System.console().readLine().strip().toCharArray();
+					}
+					if (password == null) {
+						System.out.print(Tr.get("password") + ": ");
+						password = System.console().readPassword();
+					}
+					System.out.println();
+					conf.authUsername = username;
+					conf.authPassword = password;
+				}
+				
+				// add Basic-Auth
 				String auth = new String(conf.authUsername) + ":" + new String(conf.authPassword);
 		        byte[] authEncBytes = Base64.getEncoder().encode(auth.getBytes());
 		        String authHeaderValue = "Basic " + new String(authEncBytes);
+		        con = (HttpURLConnection) url.openConnection();
 		        con.setRequestProperty("Authorization", authHeaderValue);
 		        con.setRequestProperty("X-Requested-With", "XMLHttpRequest");
-	        }
+			}
+			if (con.getResponseCode() == HttpURLConnection.HTTP_UNAUTHORIZED) { 
+				logger.log("e", "Authentication failed for url \"" + serverURL + "\"", "");
+				System.exit(-1);
+			} 
 			
 			try {						
 				File download = File.createTempFile("Download-Installation", ".jar");	
 				
-				// für eine Statusanzeige wird zunächst die Dateigröße der Datei ermittelt (wird in Bytes ausgegeben)
+				// for a download status the size of the downloadable file is determined (in Bytes)
 				double lenght = con.getContentLength();
 				if (lenght < 100 * 1024) { throw new Exception ("Probably not a file (lenght to short)"); }
-				// diese wird nun in Megabyte angegeben, sowie auf 2 Stellen nach dem Komma (Es wird die bereits heruntergeladene Dateigröße im "Binärformat" angegeben
+				// round to megabytes and two decimal points
 				lenght = Math.round(lenght / 1048576 * 100) / 100.0;
 				
-				// es muss nun parallel die bereits heruntergeladene Dateigröße ermittelt werden
+				// in parallel the already downloaded file size has to be determined
 				ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 				double lenghtTmp = lenght;
 				Future<?> future = scheduler.scheduleWithFixedDelay(() -> {

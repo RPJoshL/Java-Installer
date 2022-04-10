@@ -12,8 +12,9 @@ public class RunInConsole {
 
 
 	/**
-	 * Öffnet das Programm in der Konsole, falls dieses noch nicht in solch einer ausgeführt wird
-	 * @param keepOpen	 Ob die Konsole nach dem Durchlauf des Programms geschlossen werden soll
+	 * Opens the program inside a console if not already run inside a console window
+	 * 
+	 * @param keepOpen	the console will stay opened after the program was closed
 	 */
 	public static void start(boolean keepOpen) { 
 		start (keepOpen, null, false, false); 
@@ -21,20 +22,22 @@ public class RunInConsole {
 
 
 	/**
-	 * Öffnet das Programm in der Konsole, falls dieses noch nicht in solch einer ausgeführt wird
-	 * @param args				Mit welchen Parametern die Main-Methode beliefert werden soll
-	 * @param keepOpen			Ob die Konsole nach dem durchlauf des Programms geöffnet bleiben soll
+	 * Opens the program inside a console if not already run inside a console window
+	 * 
+	 * @param args				the command line options for the main method when calling the program inside the console again
+	 * @param keepOpen			the console will stay opened after the program finishes
 	 */
     public static void start(String[] args, boolean keepOpen) {
         start(keepOpen, args, false, false);
     }
     
     /**
-     * Öffnet das Programm in der Konsole
-	 * @param args				Mit welchen Parametern die Main-Methode beliefert werden soll
-     * @param keepOpen			Ob die Konsole nach dem durchlauf des Programms geöffnet bleiben soll
-     * @param forceRestart		Ob ein Neustart gemacht werden soll, wenn das Programm bereits in der Konsole läuft
-     * @param asAdmin			Ob das Programm mit Administratorprivelegien gestartet werden soll (Powershell muss installiert sein)
+	 * Opens the program inside a console if not already run inside a console window
+	 * 
+	 * @param args				the command line options for the main method when calling the program inside the console again
+	 * @param keepOpen			the console will stay opened after the program finishes
+     * @param forceRestart		even restart the program when already running inside a console
+     * @param asAdmin			start the console with administrator privileges (on Windows Powershell is required)
      */
     public static void start(String[] args, boolean keepOpen, boolean forceRestart, boolean asAdmin) {
         start(keepOpen, args, forceRestart, asAdmin);
@@ -45,9 +48,9 @@ public class RunInConsole {
 
     	String executableName = getExecutableName();
        
-		// wird vermutlich in einer IDE ausgeführt
+		// probably executed inside IDE
     	if (executableName == null) return;
-    	// wird bereits in der Konsole ausgeführt
+    	// is already executed in console
     	if (System.console() != null && !forceRestart) return;
 
     	startExecutableInConsole(executableName, keepOpen, asAdmin, args);
@@ -57,17 +60,17 @@ public class RunInConsole {
 
 
 	/**
-	 * Öffnen ein Konsolenfenster und startet in diesem die Jar-Datei
+	 * Opens the console windows and starts the jar file
 	 *
-	 * @param executableName		Der Name der Jar-Datei (ohne Pfad -> relativ)
-	 * @param stayOpenAfterEnd		Ob das Konsolenfenster nach dem vollständigen durchlauf der Jar-Datei geschlossen werden soll
-	 * @param asAdmin				Ob das Programm mit Administratorprivelegien gestartet werden soll (Powershell muss installiert sein)
+	 * @param executableName		the name of the jar file (without the path -> relativ)
+	 * @param stayOpenAfterEnd		keep the console windows opened after the run of the jar file
+	 * @param asAdmin				start the console with administrator privileges (on Windows Powershell is required)
 	 */
 	private static void startExecutableInConsole(String executableName, final boolean keepOpen, final boolean asAdmin, String[] args) {
 		
 		String command = null;
 		
-		// es müssen nun noch die Parameter ermittelt werden
+		// determine the parameters
 		String strArgs = "";
 		for (String currentArg: args) {
 			strArgs += "\"" + currentArg + "\" ";
@@ -107,14 +110,12 @@ public class RunInConsole {
     				if (output != null && !output.equals("")) { terminal = currentTerminal[0]; terminalCommand = currentTerminal[1]; break; }
             	}
             	
-            	
             	if (terminal == null) break;
             		
             	if (!asAdmin) {
             		if (keepOpen) new ProcessBuilder("bash", "-c", terminal + " " + terminalCommand + " /bin/sh -c 'java -jar \"" + executableName + "\" " + strArgs + "; exec bash'").start();
             		else          new ProcessBuilder("bash", "-c", terminal + " " + terminalCommand + " /bin/sh -c 'java -jar \"" + executableName + "\" " + strArgs + "'").start();
             	} else {
-            		
             		if (keepOpen) new ProcessBuilder("bash", "-c", terminal + " " + terminalCommand + " sudo /bin/sh -c 'java -jar \"" + executableName + "\" " + strArgs + "; exec bash'").start();
             		else          new ProcessBuilder("bash", "-c", terminal + " " + terminalCommand + " sudo /bin/sh -c 'java -jar \"" + executableName + "\" " + strArgs + "'").start();
             	}
@@ -133,7 +134,7 @@ public class RunInConsole {
 
 
 	/**
-	 * @return Der Name der Jar-Datei <i> (BeMa_installer.jar) </i>
+	 * @return the name of the jar file <i> (MyInstaller.jar) </i>
 	 */
 	public static String getExecutableName() {
 
@@ -141,11 +142,11 @@ public class RunInConsole {
         
 		final CodeSource codeSource = RunInConsole.class.getProtectionDomain().getCodeSource();
 		if (codeSource == null) {
-			// es wird nichts geloggt
+			// do nothing
 		} else {
 			String path = codeSource.getLocation().getPath();
 			if (path == null || path.isEmpty()) {
-				// es wird nichts geloggt;
+				// do nothing
 			} else {
 				executableNameFromClass = new File(path).getName();
 			}
@@ -165,18 +166,18 @@ public class RunInConsole {
 
 
 	/**
-	 * Gibt zurück, ob es sich um eine .jar Datei handelt, und ob diese existiert
-	 * @param name Name der Jar Datei
-	 * @return Ob es sich um eine Jar-Datei handelt
+	 * Checks if the given file path is valid and if its a jar file
+	 * 
+	 * @param	the name of the jar file
+	 * @return 	the file path is valid and a jar file
 	 */
 	private static boolean isJarFile(final String name) {
 
 		if (name == null || !name.toLowerCase().endsWith(".jar")) return false;
         
-		// überprüfe, ob diese existiert
+		// checks if file exists
 		final File file = new File(name);
 		return file.exists() && file.isFile();
 	}
-
 
 }
