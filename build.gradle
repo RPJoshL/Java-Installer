@@ -94,8 +94,8 @@ publishing {
                 url = 'https://git.rpjosh.de/RPJosh/Java-Installer'
                 licenses {
                     license {
-                        name = 'The GNU General Public License, Version 3'
-                        url = 'https://www.gnu.org/licenses/gpl-3.0.html'
+                        name = 'The GNU AFFERO GENERAL PUBLIC LICENSE, Version 3'
+                        url = 'https://www.gnu.org/licenses/agpl-3.0.html'
                     }
                 }
                 developers {
