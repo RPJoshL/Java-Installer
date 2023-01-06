@@ -68,3 +68,6 @@ local.properties
 
 # Gradle
 .gradle
+
+# Space for private notes
+/notes

@@ -13,6 +13,11 @@ group = "de.rpjosh"
 
 // ----- //
 
+// Set correct encoding
+compileJava.options.encoding = 'ISO-8859-1'
+tasks.withType(Javadoc) {
+    options.encoding = 'ISO-8859-1'
+}
 
 sourceCompatibility = 11
 targetCompatibility = 11
@@ -44,6 +49,7 @@ task sourcesJar(type: Jar, dependsOn: classes) {
     classifier = 'sources'
     from sourceSets.main.allSource
 }
+
 //sourceSets.main.resources { srcDirs = ["src/main/java"]; exclude "**/*.java" }
 
 
@@ -66,13 +72,13 @@ artifacts {
 
 // the created jar file will be copied automatically into the release directory
 task copyJar(type: Copy) {
-   from file("$buildDir/dist/installer-" + version + ".jar"), file("$buildDir/dist/installer-" + version + "-javadoc.jar"), file("$buildDir/dist/installer-" + version + "-sources.jar")
+   from file("$buildDir/dist/installer-" + version + ".jar"), file("$buildDir/libs/installer-" + version + "-javadoc.jar"), file("$buildDir/libs/installer-" + version + "-sources.jar")
    into file("$buildDir/../release")
 }
 
 // build the maven repo file structure -> Javadoc can be used easily in eclipse
 task copyJarToMaven (type: Copy) {
-   from file("$buildDir/dist/installer-" + version + ".jar"), file("$buildDir/dist/installer-" + version + "-javadoc.jar"), file("$buildDir/dist/installer-" + version + "-sources.jar")
+   from file("$buildDir/dist/installer-" + version + ".jar"), file("$buildDir/libs/installer-" + version + "-javadoc.jar"), file("$buildDir/libs/installer-" + version + "-sources.jar")
    into file("$buildDir/../release/mavenRepo/de/rpjosh/installer/" + version) 
 }
 
@@ -120,17 +126,12 @@ repositories {
 }
 
 dependencies {
-  
-    // Use JUnit test framework
-    testImplementation 'junit:junit:4.12'
-    
     // https://mvnrepository.com/artifact/com.github.vatbub/mslinks
 	api group: 'com.github.vatbub', name: 'mslinks', version: '1.0.6.2'
 	
 	
 	// https://mvnrepository.com/artifact/commons-io/commons-io
 	api group: 'commons-io', name: 'commons-io', version: '2.10.0'
-    
 }
 
 tasks.named('jar') {
