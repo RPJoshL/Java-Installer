@@ -106,6 +106,11 @@ public class InstallConfig {
 	protected String 		serviceRestart;
 	protected Integer 		serviceRestartSec;
 	
+	// GUI autostart //
+	protected boolean createGuiAutostart;
+	protected String guiAutostartUser;
+	protected String guiAutostartFlags;
+	
 	// ----- //
 	
 	/**
@@ -339,6 +344,18 @@ public class InstallConfig {
 		this.serviceExecStop 		= serviceExecStop;
 		this.serviceRestart 		= serviceRestart;
 		this.serviceRestartSec 		= serviceRestartSec;
+	}
+	
+	/**
+	 * [Linux] Creates an auto start for your GUI application that will be started directly after the window manager was loaded
+	 * 
+	 * @param  user			User for which the GUI should be started
+	 * @param  startFlags   Execution flags to add to the launch script like "--minimized"
+	 */
+	public void createGuiAutostart(String user, String startFlags) {
+		this.createGuiAutostart = true;
+		this.guiAutostartUser = user;
+		this.guiAutostartFlags= startFlags;
 	}
 	
 	

@@ -6,17 +6,17 @@ plugins {
 
 // Set version of programm //
 
-version = "1.0.2"
-def version = "1.0.2"
+version = "1.0.3"
+def version = "1.0.3"
 
 group = "de.rpjosh"
 
 // ----- //
 
 // Set correct encoding
-compileJava.options.encoding = 'ISO-8859-1'
+compileJava.options.encoding = 'UTF-8'
 tasks.withType(Javadoc) {
-    options.encoding = 'ISO-8859-1'
+    options.encoding = 'UTF-8'
 }
 
 sourceCompatibility = 11

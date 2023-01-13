@@ -471,6 +471,13 @@ public class Installer {
 			// create a systemd unit file //
 			if (conf.createUnitFile) this.createUnitFile();
 			
+			// create a GUI auto start file //
+			if (conf.createGuiAutostart) {
+				// Currently only Gnome is supported
+				String pathMenu = "/home/" + conf.guiAutostartUser + "/.config/autostart/" + conf.getApplicationNameShort() + ".desktop";
+				this.createDesktopShortcut(pathMenu, conf.guiAutostartFlags);
+			}
+			
 			// create a uninstaller //
 			try {
 				String batchFileUninstall = "#!/bin/bash" + "\n"
@@ -518,6 +525,11 @@ public class Installer {
 				        + "systemctl stop " + conf.getApplicationNameShort() + ".service" + "\n"
 					    + "systemctl daemon-reload" + "\n"
 					    + "\n";
+				}
+				// remove autostart entry
+				if (conf.createGuiAutostart) {
+					batchFileUninstall 
+					+= "rm -f \"" + "/home/" + conf.guiAutostartUser + "/.config/autostart/" + conf.getApplicationNameShort() + ".desktop\"" + "\n";
 				}
 				
 				batchFileUninstall += "\necho \"\"";
