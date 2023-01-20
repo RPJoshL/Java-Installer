@@ -2,7 +2,6 @@ package de.rpjosh.installer;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.InputStreamReader;
@@ -13,6 +12,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.Base64;
@@ -24,8 +25,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
-
-import org.apache.commons.io.FileUtils;
 
 import mslinks.ShellLink;
 import de.rpjosh.installer.InstallConfig.OSType;
@@ -144,7 +143,10 @@ public class Installer {
 				
 		System.out.print("\n" + Tr.get("installation_copyJar") + ": ");
 		try {
-			FileUtils.copyInputStreamToFile(new FileInputStream(new File(jarFile)), new File(conf.getApplicationDir() + conf.getApplicationNameShort() + ".jar"));
+			File source = new File(jarFile);
+			File destination = new File(conf.getApplicationDir() + conf.getApplicationNameShort() + ".jar");
+			
+			Files.copy(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
 		} catch (Exception ex) {
 			System.out.println(Tr.get("failed") + ".\n\n" + Tr.get("errorMessage") + ": ");
 			ex.printStackTrace();

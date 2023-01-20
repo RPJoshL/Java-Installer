@@ -5,13 +5,13 @@ import java.io.InputStreamReader;
 import java.io.File;
 import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.io.FileUtils;
 
 /**
  *  Define configuration options for the installation
@@ -612,16 +612,17 @@ public class InstallConfig {
 	protected boolean getResource(String pathInJar, String pathToWrite, boolean logError) {
 		
 		final File jarFile = new File(getLocationOfJarFile());
-
 		try {
 			if (jarFile.isFile()) {
 				InputStream in = getClass().getResourceAsStream("/" + pathInJar); 
-				FileUtils.copyInputStreamToFile(in, new File(pathToWrite));
+				
+				File file = new File(pathToWrite);
+				Files.copy(in, file.toPath(), StandardCopyOption.REPLACE_EXISTING);
+				
 				return true;
-		} 
+			} 
 			
 			return false;
-
 		} catch (Exception ex ) { 
 			if (logError) logger.log("w", ex, "getResource");
 			return false;

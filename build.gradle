@@ -6,8 +6,8 @@ plugins {
 
 // Set version of programm //
 
-version = "1.0.3"
-def version = "1.0.3"
+version = "1.0.4"
+def version = "1.0.4"
 
 group = "de.rpjosh"
 
@@ -128,10 +128,6 @@ repositories {
 dependencies {
     // https://mvnrepository.com/artifact/com.github.vatbub/mslinks
 	api group: 'com.github.vatbub', name: 'mslinks', version: '1.0.6.2'
-	
-	
-	// https://mvnrepository.com/artifact/commons-io/commons-io
-	api group: 'commons-io', name: 'commons-io', version: '2.10.0'
 }
 
 tasks.named('jar') {
