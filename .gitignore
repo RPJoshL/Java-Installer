@@ -16,7 +16,7 @@ local.properties
 .recommenders
 
 # Eclipse Core
-#.project	# keep project file
+.project
 
 # External tool builders
 .externalToolBuilders/

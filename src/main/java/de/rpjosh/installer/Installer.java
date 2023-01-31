@@ -90,7 +90,7 @@ public class Installer {
 		
 		try { Thread.sleep(10); } catch (Exception ex) { }
 		
-		if (conf.getIsUser() && InstallConfig.getOsType() != OSType.WINDOWS) { System.out.println("userInstallation_notAvailable"); error = -10; }
+		if (conf.getIsUser() && InstallConfig.getOsType() != OSType.WINDOWS) { System.out.println("userInstallation_notAvailable"); error = -10; return; }
 		
 		System.out.println(Tr.get("installation_start", conf.getApplicationNameShort(), conf.getVersion()) + "\n");
 		
@@ -131,14 +131,12 @@ public class Installer {
 			File portableDir = new File(conf.getPortableDir());
 			if (!portableDir.exists()) {
 				System.out.print(Tr.get("installation_portable_createDirectory") + ": ");
-				System.out.print(": ");
 				if (!portableDir.mkdirs()) {
 					System.out.print(Tr.get("noAuthorization") + "!");
 					error = -12; return;
 				} else System.out.print(Tr.get("created"));
 			}
-			
-			conf.setPortable(portableDir.getAbsolutePath().replace("\\", "/") + "/");	
+			conf.setPortable(portableDir.getAbsolutePath().replace("\\", "/") + "/");
 		}
 				
 		System.out.print("\n" + Tr.get("installation_copyJar") + ": ");
@@ -177,7 +175,7 @@ public class Installer {
 				
 				if (InstallConfig.getOsType() == OSType.LINUX) {
 					// create a launch script
-					this.createLauncher("Programm/" + conf.getApplicationNameShort() + ".jar", conf.getPortableDir() + conf.getApplicationNameShort(), false);
+					this.createLauncher("", conf.getPortableDir() + conf.getApplicationNameShort(), false);
 					
 					// make the file executable
 					Process p = new ProcessBuilder("bash", "-c", "chmod +x " + conf.getPortableDir() + conf.getApplicationNameShort()).start();
@@ -185,6 +183,9 @@ public class Installer {
 					
 					this.createDesktopShortcut(conf.getPortableDir() + conf.getApplicationNameShort() + ".desktop", "");
 				} else if (InstallConfig.getOsType() == OSType.WINDOWS) {
+					// Create launch script
+					this.createLauncher("", conf.getPortableDir() + conf.getApplicationNameShort() + ".bat", false);
+					
 					this.createDesktopShortcut(conf.getPortableDir() + conf.getApplicationNameShort() + ".lnk", "");
 				}
 
@@ -368,25 +369,40 @@ public class Installer {
 				if (userInstallation)  batchFile += batchFilePath.replace("$REGISTRYPATH$", "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\");
 				if (!userInstallation) batchFile += batchFilePath.replace("$REGISTRYPATH$", "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\");
 			
-				// expanding the path variable
-				// @TODO maybe we should edit the path variable in the registry directly HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Environment to overcome the 1024 max lenght limit
+				// expanding the path variable (add to path and registry)
 				batchFile +=
 						  "setlocal EnableDelayedExpansion\n"
 						+ "set \"SEARCHTEXT=;" + conf.getApplicationDir().replace("/", "\\") + "path;\"\n"
 						+ "set \"REPLACETEXT=;\"\n";
+				
+				// Windows has a limit of 1024 character for setting the path with "setx". To overcome this limit, we try to modify the path variable via the registry instead of writing
+				// it directly.
+				
+				/*
 				if (userInstallation)  batchFile +=
-					  "for /F \"skip=2 tokens=1,2*\" %%N in ('%SystemRoot%\\System32\\reg.exe query \"HKCU\\Environment\" /v \"Path\" 2^>nul') do if /I \"%%N\" == \"Path\" call set \"UserPath=%%P\"\n"
-					+ "set \"newText=!UserPath:%SEARCHTEXT%=%REPLACETEXT%!\"\n"
-					+ "if \"!UserPath!\" == \"%newText%\" ( setx PATH \"%UserPath%;" + conf.getApplicationDir().replace("/", "\\") + "path;\")\n";
-				if (!userInstallation) batchFile += 
-					  "set \"newText=!PATH:%SEARCHTEXT%=%REPLACETEXT%!\"\n"
-					+ "if \"%PATH%\" == \"%newText%\" ( setx /M PATH \"%PATH%;" + conf.getApplicationDir().replace("/", "\\") + "path;\")\n";
+						  "for /F \"skip=2 tokens=1,2*\" %%N in ('%SystemRoot%\\System32\\reg.exe query \"HKCU\\Environment\" /v \"Path\" 2^>nul') do if /I \"%%N\" == \"Path\" call set \"UserPath=%%P\"\n"
+						+ "set \"newText=!UserPath:%SEARCHTEXT%=%REPLACETEXT%!\"\n"
+						+ "if \"!UserPath!\" == \"%newText%\" ( setx PATH \"%UserPath%;" + conf.getApplicationDir().replace("/", "\\") + "path;\")\n";
+					if (!userInstallation) batchFile += 
+						  "set \"newText=!PATH:%SEARCHTEXT%=%REPLACETEXT%!\"\n"
+						+ "if \"%PATH%\" == \"%newText%\" ( setx /M PATH \"%PATH%;" + conf.getApplicationDir().replace("/", "\\") + "path;\")\n";
+				*/
+				
+				if (!userInstallation) locationRegistry = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment";
+				else locationRegistry = "HKCU\\Environment";
+				batchFile +=
+						  "set \"SEARCHTEXT=;" + conf.getApplicationDir().replace("/", "\\") + "path;\"\n"
+						+ "set \"REPLACETEXT=;\"\n"
+						+ "for /F \"skip=2 tokens=1,2*\" %%N in ('%SystemRoot%\\System32\\reg.exe query \"" + locationRegistry + "\" /v \"Path\" 2^>nul') do if /I \"%%N\" == \"Path\" call set \"RegPath=%%P\"\n"
+						+ "set \"newText=!RegPath:%SEARCHTEXT%=%REPLACETEXT%!\"\n"
+						+ "if \"%RegPath%\" == \"%newText%\" ( reg add \"" + locationRegistry + "\" /v Path /t REG_SZ /f /d \"%RegPath%;" + conf.getApplicationDir().replace("/", "\\") + "path;\")\n";
+
 				batchFile += "endlocal\n";
 			}
 
 			try {
 				// creating a batch file and execute the commands
-				File batchMakeRegeditEntry = File.createTempFile("installApplication", ".bat");
+				File batchMakeRegeditEntry = File.createTempFile("installApplication-register", ".bat");
 				
 				FileWriter fwFile = new FileWriter(batchMakeRegeditEntry);
 				PrintWriter pwFile = new PrintWriter(fwFile);
@@ -415,22 +431,26 @@ public class Installer {
 					+ "del \"" + conf.getDesktopDir().replace("/", "\\") + conf.getApplicationNameShort() + " - *.lnk\" /q \n"
 					+ "del \"%public%\\Desktop\\" + conf.getApplicationNameShort() + ".lnk\" /q \n";
 			
+			// Remove path entry
 			if (conf.createPathVariable) {
+				locationRegistryPath += "$REGISTRYPATH$" + conf.getApplicationNameShort() + ".exe";
 				if (userInstallation)  batchFileUninstall += "reg delete \"" + locationRegistryPath.replace("$REGISTRYPATH$", "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\") + "\" /f \n";
-				if (!userInstallation) batchFileUninstall += "reg delete \"" + locationRegistryPath.replace("$REGISTRYPATH$", "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\") + "\" /f \n";
+				if (!userInstallation) batchFileUninstall += "reg delete \"" + locationRegistryPath.replace("$REGISTRYPATH$", "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\App Paths\\") + "\" /f \n";
 				
-				// removing path entry
+				if (!userInstallation) locationRegistry = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment";
+				else locationRegistry = "HKCU\\Environment";
+				batchFileUninstall +=
+						"setlocal EnableDelayedExpansion\n"
+						+ "set \"SEARCHTEXT=;" + conf.getApplicationDir().replace("/", "\\") + "path;\"\n"
+						+ "set \"REPLACETEXT=;\"\n"
+						+ "for /F \"skip=2 tokens=1,2*\" %%N in ('%SystemRoot%\\System32\\reg.exe query \"" + locationRegistry + "\" /v \"Path\" 2^>nul') do if /I \"%%N\" == \"Path\" call set \"RegPath=%%P\"\n"
+						+ "set \"newText=!RegPath:%SEARCHTEXT%=%REPLACETEXT%!\"\n"
+						+ "reg add \"" + locationRegistry + "\" /v Path /t REG_SZ /f /d \"%newText%\"\n";
 				batchFileUninstall +=
 						  "setlocal EnableDelayedExpansion\n"
 						+ "set \"SEARCHTEXT=;" + conf.getApplicationDir().replace("/", "\\") + "path;\"\n"
 						+ "set \"REPLACETEXT=;\"\n";
-				if (userInstallation)  batchFileUninstall +=
-					  "for /F \"skip=2 tokens=1,2*\" %%N in ('%SystemRoot%\\System32\\reg.exe query \"HKCU\\Environment\" /v \"Path\" 2^>nul') do if /I \"%%N\" == \"Path\" call set \"UserPath=%%P\"\n"
-					+ "set \"newText=!UserPath:%SEARCHTEXT%=%REPLACETEXT%!\"\n"
-					+ "setx PATH \"%newText%\"\n";
-				if (!userInstallation) batchFileUninstall += 
-					  "set \"newText=!PATH:%SEARCHTEXT%=%REPLACETEXT%!\"\n"
-					+ "setx /M PATH \"%newText%\"\n";
+
 				batchFileUninstall += "endlocal  \n";
 			}
 					
@@ -623,8 +643,12 @@ public class Installer {
 						+ "elif [ \"$uninstall\" = \"true\" ]; then" + "\n"
 						+ "    " + conf.getApplicationDir() + "uninstall.sh" + "\n"
 						+ "else" + "\n"
-						+ "    if [ \"$foreground\" = \"true\" ] || [ \"$foreground\" = \"trueDefault\" ]; then eval \"java" + (conf.getMaxHeapSize() != 0 ? (" -Xmx" + conf.getMaxHeapSize()) + "M" : "") + " -jar \"\"" + pathToLink + "\"\" \"\"$programOptions\"\"\"" + "\n"
-						+ "    else ( eval \"java" + (conf.getMaxHeapSize() != 0 ? (" -Xmx" + conf.getMaxHeapSize()) + "M" : "") + " -jar \"\"" + pathToLink + "\"\" \"\"$programOptions\"\" > /dev/null 2> /dev/null\") &" + "\n"
+						+ "    if [ \"$foreground\" = \"true\" ] || [ \"$foreground\" = \"trueDefault\" ]; then eval \"java"
+							+ (conf.getMaxHeapSize() != 0 ? (" -Xmx" + conf.getMaxHeapSize()) + "M" : "") + (conf.getInitialHeapSize() != 0 ? (" -Xms" + conf.getInitialHeapSize()) + "M" : "")
+							+ " -jar \"\"" + pathToLink + "\"\" \"\"$programOptions\"\"\"" + "\n"
+						+ "    else ( eval \"java" 
+							+ (conf.getMaxHeapSize() != 0 ? (" -Xmx" + conf.getMaxHeapSize()) + "M" : "") + (conf.getInitialHeapSize() != 0 ? (" -Xms" + conf.getInitialHeapSize()) + "M" : "")
+							+ " -jar \"\"" + pathToLink + "\"\" \"\"$programOptions\"\" > /dev/null 2> /dev/null\") &" + "\n"
 						+ "    fi" + "\n"
 						+ "fi" + "\n";
 				
@@ -738,9 +762,13 @@ public class Installer {
 						+ "IF %exitScript% == 1 exit /b 0\n"
 						+ "\n"
 						+ "IF %foreground% == \"true\" (\n"
-						+ "    CALL java" + (conf.getMaxHeapSize() != 0 ? (" -Xmx" + conf.getMaxHeapSize()) + "M" : "") + " -jar \"" + pathToLink + "\" %programOption%  \n"
+						+ "    CALL java" 
+							+ (conf.getMaxHeapSize() != 0 ? (" -Xmx" + conf.getMaxHeapSize()) + "M" : "") + (conf.getInitialHeapSize() != 0 ? (" -Xms" + conf.getInitialHeapSize()) + "M" : "")
+							+ " -jar \"" + pathToLink + "\" %programOption%  \n"
 						+ ") ELSE (  \n"
-						+ "    CALL START /MIN CMD /C CALL java" + (conf.getMaxHeapSize() != 0 ? (" -Xmx" + conf.getMaxHeapSize()) + "M" : "") + " -jar \"" + pathToLink + "\" %programOption% > NUL  \n"
+						+ "    CALL START /MIN CMD /C START javaw"
+							+ (conf.getMaxHeapSize() != 0 ? (" -Xmx" + conf.getMaxHeapSize()) + "M" : "") + (conf.getInitialHeapSize() != 0 ? (" -Xms" + conf.getInitialHeapSize()) + "M" : "")
+							+ " -jar \"" + pathToLink + "\" %programOption% > NUL  \n"
 						+ ")  \n"
 						+ "\n"
 						+ ":: don't execute printHelp\n"

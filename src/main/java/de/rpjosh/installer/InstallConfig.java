@@ -81,6 +81,7 @@ public class InstallConfig {
 	private boolean launchInBackground = true;
 	
 	private int maxHeapSize = 0;
+	private int initialHeapSize = 0;
 	
 	// ----- //
 	
@@ -580,6 +581,9 @@ public class InstallConfig {
 		if (InstallConfig.getOsType() == OSType.WINDOWS && this.createPathVariable && !directorysInAppData.contains("path/")) {
 			directorysInAppData.add("path/");
 		}
+		if (isPortable) {
+			directorysInAppData.add("Programm/");
+		}
 		
 		String rtc = this.applicationDir;
 		
@@ -677,13 +681,22 @@ public class InstallConfig {
 	
 	/**
 	 * Sets the maximum heap size the JVM may consume (-Xmx)
-	 * @param sizeInMb	the maximum size in megabye
+	 * @param sizeInMb	the maximum size in megabyte
 	 */
 	public void setMaxHeapSize(int sizeInMb) {
 		if (sizeInMb < 2) logger.log("w", "The maximum heap size must be greater or equal 2 megabyte", "setMaxHeapSize");
 		else this.maxHeapSize = sizeInMb;
 	}
+	/**
+	 * Sets the initial heap size of the JVM (-Xms)
+	 * @param sizeInMb the initial size in megabyte
+	 */
+	public void setInitialHeapSize(int sizeInMb) {
+			if (sizeInMb < 2) logger.log("w", "The initial heap size must be greater or equal 2 megabyte", "setInitialHeapSize");
+			else this.initialHeapSize = sizeInMb;
+	}
 	
 	protected int getMaxHeapSize() { return maxHeapSize; }
+	protected int getInitialHeapSize() { return initialHeapSize; }
 	
 }
