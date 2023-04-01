@@ -83,6 +83,8 @@ public class InstallConfig {
 	private int maxHeapSize = 0;
 	private int initialHeapSize = 0;
 	
+	protected boolean killRunningInstances = true;
+	
 	// ----- //
 	
 	// systemd settings //
@@ -174,6 +176,16 @@ public class InstallConfig {
 	protected Logger getLogger() { return logger; }
 	protected boolean getIsUser() { return isUser; }
 	protected boolean getIsPortable() { return isPortable; }
+	
+	/**
+	 * By default all running instances will be killed before the installation starts.
+	 * This behavior can be toggled through this method
+	 * 
+	 * @param kill		If the running instances should be killed
+	 */
+	public void setKillRunningInstance(boolean kill) {
+		this.killRunningInstances = kill;
+	}
 	
 	
 	/**
@@ -500,7 +512,9 @@ public class InstallConfig {
 		}
 		
 		this.configDir = rtc;
-		this.initConfigDir();
+		if (!this.initConfigDir()) {
+			this.configDir = "";
+		}
 
 		return rtc;
 	}
@@ -517,18 +531,26 @@ public class InstallConfig {
 		initConfigDir();
 	}
 	
-	private void initConfigDir() {
+	private boolean initConfigDir() {
 		
-		if (!isInstallationStarted) return; 	// before the start of the installation no folders will be created
+		if (!isInstallationStarted) return false; 	// before the start of the installation no folders will be created
 		
 		String rtc = this.configDir;
+		
+		// Create the root application directory
+		File configDirectory = new File(rtc);
+		if (!configDirectory.exists()) new File(rtc).mkdirs();
 		
 		try {
 			for (String direcotory: directorysInConfig) {
 				File currentDirectory = new File(rtc + direcotory);
 				if (!currentDirectory.exists()) new File(rtc + direcotory).mkdirs();
 			}
+			
+			return true;
 		} catch (Exception ex) { logger.log("e", ex, "getConfigDir"); }
+		
+		return false;
 	}
 	
 	
@@ -556,7 +578,9 @@ public class InstallConfig {
 		}
 		
 		this.applicationDir = rtc;
-		initApplicationDir();
+		if (!initApplicationDir()) {
+			this.applicationDir = "";
+		};
 		
 		return rtc;
 	}
@@ -573,9 +597,9 @@ public class InstallConfig {
 		initApplicationDir(); 	// isn't done right here -> directories will be created before the installation and not now
 	}
 	
-	protected void initApplicationDir() {
+	protected boolean initApplicationDir() {
 		
-		if (!isInstallationStarted) return; 	// before the installation no directory is been created
+		if (!isInstallationStarted) return false; 	// before the installation no directory is been created
 		
 		// if an path entry should be added (only for windows) the path variable points to an own folder
 		if (InstallConfig.getOsType() == OSType.WINDOWS && this.createPathVariable && !directorysInAppData.contains("path/")) {
@@ -587,12 +611,20 @@ public class InstallConfig {
 		
 		String rtc = this.applicationDir;
 		
+		// Create the root application directory
+		File applicationDirectory = new File(rtc);
+		if (!applicationDirectory.exists()) new File(rtc).mkdirs();
+		
 		try {
 			for (String directory: directorysInAppData) {
 				File currentDirectory = new File(rtc + directory);
 				if (!currentDirectory.exists()) new File(rtc + directory).mkdirs();
 			}
+			
+			return true;
 		} catch (Exception ex) { logger.log("e", ex, "initApplicationDir"); }
+	
+		return false;
 	}
 	
 	/**

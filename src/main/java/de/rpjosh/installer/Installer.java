@@ -94,8 +94,8 @@ public class Installer {
 		
 		System.out.println(Tr.get("installation_start", conf.getApplicationNameShort(), conf.getVersion()) + "\n");
 		
-		// all running instances will be killed
-		this.killRunningInstances();
+		// All running instances will be killed
+		if (conf.killRunningInstances) this.killRunningInstances();
 		
 		System.out.print(Tr.get("installation_architekture") + ": ");
 		String aarch = this.getVersionOfProgramm();

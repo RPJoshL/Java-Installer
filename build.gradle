@@ -6,8 +6,8 @@ plugins {
 
 // Set version of programm //
 
-version = "1.0.4"
-def version = "1.0.4"
+version = "1.0.5"
+def version = "1.0.5"
 
 group = "de.rpjosh"
 
