@@ -55,7 +55,7 @@ public class Installer {
 		conf.isInstallationStarted = true;
 		
 		// Check if architecture is supported by this installer
-		if (InstallConfig.getOsType() != OSType.WINDOWS || InstallConfig.getOsType() != OSType.LINUX) {
+		if (InstallConfig.getOsType() != OSType.WINDOWS && InstallConfig.getOsType() != OSType.LINUX) {
 			error = 6;
 			System.err.println(Tr.get("installation_os_not_supported", System.getProperty("os.name")));
 			return;
@@ -150,12 +150,13 @@ public class Installer {
 		try {
 			File source = new File(jarFile);
 			File destination = new File(conf.getApplicationDir() + conf.getApplicationNameShort() + ".jar");
-			
+
 			Files.copy(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
 		} catch (Exception ex) {
 			System.out.println(Tr.get("failed") + ".");
 			System.err.println("\n" + Tr.get("errorMessage") + ": ");
-			ex.printStackTrace();
+			logger.log("e", ex, "");
+
 			error = 13; return;
 		}
 		System.out.println(Tr.get("successful") + "\n");
@@ -714,6 +715,7 @@ public class Installer {
 						+ "SET stop=\"false\"\n"
 						+ "SET uninstall=\"false\"\n"
 						+ "SET programOption=\n"
+						+ "SET background=\"false\"\n"
 						+ "\n"
 						+ ":: determine the number of given arguments and fill the array\n"
 						+ "SET argCount=0\n"
@@ -773,9 +775,9 @@ public class Installer {
 						+ "\n"
 						+ ":: main programm logic\n"
 						+ "SET exitScript=0\n"
-						+ "IF defined programOption IF %foreground% == \"falseDefault\"      SET foreground=\"true\"\n"
-						+ "IF %foreground% == \"trueDefault\"                                SET foreground=\"true\"\n"
-						+ "IF defined background IF %background% == \"true\"				 SET foreground=\"false\"\n"
+						+ "IF defined programOption IF %foreground% == \"falseDefault\"     SET foreground=\"true\"\n"
+						+ "IF %foreground% == \"trueDefault\"                               SET foreground=\"true\"\n"
+						+ "IF %background% == \"true\"                                      SET foreground=\"false\"\n"
 						+ "\n"
 						+ "IF %stop% == \"true\" (\n"
 						+ "    wmic PROCESS Where \"name Like '%%java%%' AND CommandLine like '%%" + conf.getApplicationNameShort() + "%%'\" Call Terminate\n"
@@ -1199,7 +1201,7 @@ public class Installer {
 	}
 	
 	/**
-	 * Returns if the installation was successful (0 = successful, {@literal <}0 = error)
+	 * Returns if the installation was successful (0 = successful, {@literal >}0 = error)
 	 * 
 	 * @return	the error code
 	 */
