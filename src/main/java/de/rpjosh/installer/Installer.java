@@ -54,11 +54,18 @@ public class Installer {
 		
 		conf.isInstallationStarted = true;
 		
+		// Check if architecture is supported by this installer
+		if (InstallConfig.getOsType() != OSType.WINDOWS || InstallConfig.getOsType() != OSType.LINUX) {
+			error = 6;
+			System.err.println(Tr.get("installation_os_not_supported", System.getProperty("os.name")));
+			return;
+		}
+		
 		// check if the user has root rights
 		if (!conf.getIsPortable() && !conf.getIsUser()) {
 			if (!this.checkRoot()) {
 				System.out.println(Tr.get("root_rights_required"));
-				error = -1;
+				error = 1;
 				
 				if ( (InstallConfig.getOsType() == OSType.WINDOWS || InstallConfig.getOsType() == OSType.LINUX) && !conf.getQuiet()) {
 					System.out.println(Tr.get("root_askForRestart") + ": ");
@@ -77,20 +84,20 @@ public class Installer {
 							}
 						}
 						
-						error = -2; return;
+						error = 2; return;
 						
 					} catch (Exception ex) { logger.log("e", ex, "installProgramm"); 
-						error = -3; return;
+						error = 3; return;
 					}
 				}
 				
-				error = -4; return;
+				error = 4; return;
 			}
 		}
 		
 		try { Thread.sleep(10); } catch (Exception ex) { }
 		
-		if (conf.getIsUser() && InstallConfig.getOsType() != OSType.WINDOWS) { System.out.println("userInstallation_notAvailable"); error = -10; return; }
+		if (conf.getIsUser() && InstallConfig.getOsType() != OSType.WINDOWS) { System.err.println("userInstallation_notAvailable"); error = 10; return; }
 		
 		System.out.println(Tr.get("installation_start", conf.getApplicationNameShort(), conf.getVersion()) + "\n");
 		
@@ -98,13 +105,13 @@ public class Installer {
 		if (conf.killRunningInstances) this.killRunningInstances();
 		
 		System.out.print(Tr.get("installation_architekture") + ": ");
-		String aarch = this.getVersionOfProgramm();
+		String aarch = this.getVersionOfProgramm(); if (error != 0) return;	// This could return an error
 		System.out.println(aarch);
 		
 		// copies or downloads the file
 		if (conf.downloadURL == null) {
 			logger.log("w", "no file to download or copy specified", "installProgramm");
-			error = -5;
+			error = 5;
 			return;
 		}
 		
@@ -113,14 +120,14 @@ public class Installer {
 		if (!conf.getOffline()) {
 			System.out.print(Tr.get("installation_download") + ": ");
 			jarFile = this.downloadFile(conf.downloadURL, conf.addVersion, conf.urlEnding, conf.getQuiet() ? false : conf.allowAskForBasicAuth);
-			if (error < 0) return;
+			if (error != 0) return;
 			System.out.println("\r" + Tr.get("installation_download_success") + "   ");
 		} else {
 			File fileOffline = new File(conf.downloadURL);
 			
 			if (!fileOffline.exists() || fileOffline.length() < ( 1024 * 1024)) {
-				System.out.println(Tr.get("installation_download_invalid"));
-				error = -11; return;
+				System.err.println(Tr.get("installation_download_invalid"));
+				error = 11; return;
 			}
 			jarFile = fileOffline.getAbsolutePath();
 		}
@@ -132,8 +139,8 @@ public class Installer {
 			if (!portableDir.exists()) {
 				System.out.print(Tr.get("installation_portable_createDirectory") + ": ");
 				if (!portableDir.mkdirs()) {
-					System.out.print(Tr.get("noAuthorization") + "!");
-					error = -12; return;
+					System.err.print(Tr.get("noAuthorization") + "!");
+					error = 12; return;
 				} else System.out.print(Tr.get("created"));
 			}
 			conf.setPortable(portableDir.getAbsolutePath().replace("\\", "/") + "/");
@@ -146,9 +153,10 @@ public class Installer {
 			
 			Files.copy(source.toPath(), destination.toPath(), StandardCopyOption.REPLACE_EXISTING);
 		} catch (Exception ex) {
-			System.out.println(Tr.get("failed") + ".\n\n" + Tr.get("errorMessage") + ": ");
+			System.out.println(Tr.get("failed") + ".");
+			System.err.println("\n" + Tr.get("errorMessage") + ": ");
 			ex.printStackTrace();
-			error = -13; return;
+			error = 13; return;
 		}
 		System.out.println(Tr.get("successful") + "\n");
 		
@@ -191,7 +199,7 @@ public class Installer {
 
 				System.out.println(Tr.get("successful"));
 
-			} catch (Exception ex) { System.out.println(Tr.get("failed")); error = -14; return; }
+			} catch (Exception ex) { System.out.println(Tr.get("failed")); error = 14; return; }
 			
 		} else if (conf.getIsUser()) {
 			// creates a file "userInstallation" in the application directory //
@@ -204,7 +212,7 @@ public class Installer {
 				pw.close();
 				System.out.println(Tr.get("installation_executeOtherCommands") + "...");
 				this.registerApplication(conf.getIsUser());
-			} catch (Exception ex) { System.out.println(Tr.get("installation_createFilesFailed") + "..."); error = -15; return; }
+			} catch (Exception ex) { System.out.println(Tr.get("installation_createFilesFailed") + "..."); error = 15; return; }
 
 		} else {
 			System.out.println(Tr.get("installation_executeOtherCommands") + "...");
@@ -216,7 +224,7 @@ public class Installer {
 		this.installFonts();
 		this.finishInstallation();
 		
-		if (error < 0) return;
+		if (error != 0) return;
 		
 		System.out.println("\n" + Tr.get("installation_executionSuccessful") +  "\n");
 	}
@@ -993,14 +1001,14 @@ public class Installer {
 			// check if basic auth is required
 			if (con.getResponseCode() == HttpURLConnection.HTTP_UNAUTHORIZED) {
 				if (conf.authUsername == null || conf.authPassword == null) {
-					if (!askForAuth) { logger.log("e", "Baisc authentication required for downloading the file \"" + serverURL + "\"", ""); error = -40; return null; }
+					if (!askForAuth) { logger.log("e", "Baisc authentication required for downloading the file \"" + serverURL + "\"", ""); error = 40; return null; }
 					
 					char[] username = conf.authUsername;
 					char[] password = conf.authPassword;
 					
 					System.out.println("\n" + Tr.get("basicAuthRequired"));
 					
-					if (System.console() == null) { System.out.println(Tr.get("noConsole")); System.exit(-1); }	
+					if (System.console() == null) { System.err.println(Tr.get("noConsole")); error = 7; return ""; }	
 					if (username == null) {
 						System.out.print(Tr.get("username") + ": ");
 						username = System.console().readLine().strip().toCharArray();
@@ -1060,14 +1068,14 @@ public class Installer {
 				return download.getAbsolutePath();
 				
 			} catch (Exception ex) {
-				System.out.println("fehler");
-				System.out.println("\n" + Tr.get("installation_download_failed", serverURL));
-				error = -20;
+				System.out.println(Tr.get("failed"));
+				System.err.println("\n" + Tr.get("installation_download_failed", serverURL));
+				error = 20;
 				logger.log("e", ex, "downloadFile");
 			}
 		} catch (Exception ex) {
-			System.out.println(Tr.get("installation_download_urlNotFound", serverURL));
-			error = -21;
+			System.err.println(Tr.get("installation_download_urlNotFound", serverURL));
+			error = 21;
 		}
 		
 		return null;
@@ -1088,8 +1096,9 @@ public class Installer {
 		else if (InstallConfig.getOsType() == OSType.LINUX) rtc += "linux";
 		else if (InstallConfig.getOsType() == OSType.MACOS) rtc += "mac";	
 		else {
-			System.out.println("Bettriebssystem konnte nicht ermittelt werden: " + System.getProperty("os.name"));
-			System.exit(-1);
+			error = 6;
+			System.err.println(Tr.get("installation_os_not_supported", System.getProperty("os.name")));
+			return "";
 		}
 		
 		rtc += "_";
@@ -1103,8 +1112,9 @@ public class Installer {
 		// if no architecture matched, but ending with "64", expect amd64 
 		else if (aarch.endsWith("64")) rtc += "x64";
 		else {
-			System.out.println("CPU architecture could not been determined: " + aarch);
-			System.exit(-2);
+			error = 6;
+			System.err.println(Tr.get("installation_arch_not_supported", aarch));
+			return "";
 		}
 		
 		return rtc;
@@ -1158,7 +1168,7 @@ public class Installer {
 			});
 			
 			try {
-				// Berechtigungen korrekt setzen -> Ordner: 0755 | Dateien: 0644
+				// Set permissions -> Folders: 0755 | Files: 0644
 				Process p;
 				
 				p = new ProcessBuilder("bash", "-c", "chmod -R 0644" + path + "*").start();
