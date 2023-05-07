@@ -360,9 +360,10 @@ public class InstallConfig {
 	}
 	
 	/**
-	 * [Linux] Creates an auto start for your GUI application that will be started directly after the window manager was loaded
+	 * Creates an auto start entry for your GUI application that will be started directly after the window manager
+	 * / the desktop was loaded
 	 * 
-	 * @param  user			User for which the GUI should be started
+	 * @param  user			[Linux] User for which the GUI should be started. This information is only required for linux
 	 * @param  startFlags   Execution flags to add to the launch script like "--minimized"
 	 */
 	public void createGuiAutostart(String user, String startFlags) {

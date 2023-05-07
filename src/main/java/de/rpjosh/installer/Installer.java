@@ -299,8 +299,23 @@ public class Installer {
 			
 			// Creates a Link that the program can be launched from everywhere //
 			this.createLauncher("", "", true);
-			// create also an link for the %PATH% variable
-			if (conf.createPathVariable) this.createLauncher("", conf.getApplicationDir() + "path/" + conf.getApplicationNameShort() + ".bat", true);
+			
+			// Create also an link for the %PATH% variable
+			if (conf.createPathVariable) {
+				this.createLauncher("", conf.getApplicationDir() + "path/" + conf.getApplicationNameShort() + ".bat", true);
+			}
+			
+			// Create a GUI auto start file //
+			if (conf.createGuiAutostart) {
+				String pathMenu = "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\StartUp\\" + conf.getApplicationNameShort() + ".lnk";
+				
+				// Create an autostart file only for the current user
+				if (conf.getIsUser()) {
+					pathMenu =  System.getenv("APPDATA") + "\\Microsoft\\Windows\\Start Menu\\Programs\\Autostart\\" + conf.getApplicationNameShort() + ".lnk";
+				}
+				
+				this.createDesktopShortcut(pathMenu, conf.guiAutostartFlags);
+			}
 
 			
 			// in the first step a desktop shortcut will be created //
