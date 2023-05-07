@@ -214,11 +214,11 @@ public class Installer {
 		}
 		
 		this.installFonts();
+		this.finishInstallation();
 		
 		if (error < 0) return;
 		
 		System.out.println("\n" + Tr.get("installation_executionSuccessful") +  "\n");
-		
 	}
 	
 	/**
@@ -233,7 +233,11 @@ public class Installer {
 				p.waitFor(5, TimeUnit.SECONDS);
 				
 			} else if (InstallConfig.getOsType() == OSType.LINUX) {
-				Process p = new ProcessBuilder("bash", "-c", "pkill -9 -f '" + conf.getApplicationNameShort() + ".jar'").start();
+				// If a service was installed previously try to stop it first. This will fail internal when no service was created
+				Process p = new ProcessBuilder("bash", "-c", "systemctl stop \"" + conf.getApplicationNameShort() + ".service" + "\"").start();
+				p.waitFor(5, TimeUnit.SECONDS);
+				
+				p = new ProcessBuilder("bash", "-c", "pkill -9 -f '" + conf.getApplicationNameShort() + ".jar'").start();
 				p.waitFor(5, TimeUnit.SECONDS);
 			}
 		} catch (Exception ex) { /* not required */ }
@@ -824,18 +828,22 @@ public class Installer {
 	 */
 	public void createUnitFile() {
 		
-		// nothing to do (maybe create a windows service file when needed)
+		// Nothing to do (maybe create a windows service file when needed)
 		if (InstallConfig.getOsType() != OSType.LINUX) return;
 		
 		try {
 			
-			// check if systemd is present on the machine
+			// Check if systemd is present on the machine
 			String testCommand = "if [ -d /run/systemd/system/ ]; then echo yes; else echo no; fi";
 			Process p = new ProcessBuilder("bash", "-c", testCommand).start();
 			p.waitFor();
 			BufferedReader buf = new BufferedReader(new InputStreamReader(p.getInputStream()));
 			String output = buf.readLine();
 			if (!output.equals("yes")) { logger.log("d", "systemd was nout found on the machine -> don't create a service unit", "registerApplication (create Unit File)"); return; }
+			
+			// Try to stop an unit that is already running (it will be updated with the newest version of the unit file -> don't leave)
+			p = new ProcessBuilder("bash", "-c", "systemctl stop \"" + conf.getApplicationNameShort() + ".service" + "\"").start();
+			p.waitFor(5000, TimeUnit.SECONDS);
 
 			// create the unit file
 			String 									s  = "[Unit]\n";
@@ -862,8 +870,8 @@ public class Installer {
  			if (conf.serviceRestart != null)		s += "Restart=" + conf.serviceRestart + "\n";
  			if (conf.serviceRestartSec != null)		s += "RestartSec=" + conf.serviceRestartSec + "\n";
  			
- 			// get all users for systemd configs: getent passwd | grep -v '/usr/sbin/nologin' | grep -v '/bin/false' | awk -F: '($6 != "" && ($3 > 10 || $3 == 0)) {print $6}'
-			// for Linux only a installation as root is supported -> no user systemd entry
+ 			// Get all users for systemd configs: getent passwd | grep -v '/usr/sbin/nologin' | grep -v '/bin/false' | awk -F: '($6 != "" && ($3 > 10 || $3 == 0)) {print $6}'.
+			// For Linux only a installation as root is supported -> no user systemd entry
  			String destination = "/etc/systemd/system/" + conf.getApplicationNameShort() + ".service";
 			File createLink = new File(destination);
 			
@@ -1165,6 +1173,20 @@ public class Installer {
 			} catch (Exception ex) { }
 		}
 	}	
+	
+	/**
+	 * This function will finish the installation by executing commands
+	 * that are only needed in edge cases.
+	 */
+	private void finishInstallation() {
+		if (InstallConfig.getOsType() == OSType.LINUX) {
+			try {
+				// Try to start a previously installed service again that was stopped during installation
+				Process p = new ProcessBuilder("bash", "-c", "systemctl start \"" + conf.getApplicationNameShort() + ".service" + "\"").start();
+				p.waitFor(5, TimeUnit.SECONDS);
+			} catch (Exception ex) { /* Not required */ }
+		}
+	}
 	
 	/**
 	 * Returns if the installation was successful (0 = successful, {@literal <}0 = error)
