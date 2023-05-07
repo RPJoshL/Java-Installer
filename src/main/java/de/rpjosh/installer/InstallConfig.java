@@ -319,12 +319,12 @@ public class InstallConfig {
 	 * @param serviceUser			 the user for the service
 	 * @param serviceGroup			 the group for the service
 	 * @param serviceEnvironment	 the environment variables to set
-	 * @param serviceExecStartPre	 the commands to execute before the service starts. Use -{@literal <}LaunchScript-{@literal >} to replace it with the real location of the launch script
-	 * @param serviceExecStartPost   the commands to execute after the service has started. Use-{@literal <}LaunchScript-{@literal >} to replace the location of the launch script
+	 * @param serviceExecStartPre	 the commands to execute before the service starts. Use {@literal <}LaunchScript{@literal >} to replace it with the real location of the launch script
+	 * @param serviceExecStartPost   the commands to execute after the service has started. Use {@literal <}LaunchScript{@literal >} to replace the location of the launch script
 	 * @param serviceTimeout		 the number of seconds which should been allowed to start / stop the service
-	 * @param serviceType			 the type of the service -{@literal >} oneshot, simple, exec and forking
+	 * @param serviceType			 the type of the service {@literal >} oneshot, simple, exec and forking
 	 * @param serviceExecStart		 the start command. Please take in mind that only with the type "oneshot" multiple commands can be specified. 
-	 * 								 Use -{@literal <}LaunchScript-{@literal >} to replace it with the real location of the launch script
+	 * 								 Use {@literal <}LaunchScript{@literal >} to replace it with the real location of the launch script
 	 * @param serviceExecStop		 the stop command. Use #LaunchScript# to replace the location of the launch script
 	 * @param serviceRestart		 whether the service should been restarted when the execution failed -{@literal >} on-failure or always
 	 * @param serviceRestartSec		 the number of seconds to wait between a restart
