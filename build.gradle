@@ -2,6 +2,8 @@ plugins {
     // Apply the java-library plugin to add support for Java Library
     id 'java-library'
     id 'maven-publish'
+    id 'signing'
+    id("io.github.gradle-nexus.publish-plugin") version "1.1.0"
 }
 
 // Set version of programm //
@@ -25,7 +27,7 @@ targetCompatibility = 11
 // create a single .jar with all dependencies //
 task fatJar(type: Jar) {
 
-	classifier = ''
+	archiveClassifier = ''
 	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 	
     manifest {
@@ -46,7 +48,7 @@ task fatJar(type: Jar) {
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
+    archiveClassifier = 'sources'
     from sourceSets.main.allSource
 }
 
@@ -59,7 +61,7 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
         			'Implementation-Version': version,
         			'Implementation-Group': project.group, )
     }
-    classifier = 'javadoc'
+    archiveClassifier = 'javadoc'
     from javadoc.destinationDir
 }
 
@@ -89,11 +91,25 @@ java {
     withSourcesJar()
 }
 
+nexusPublishing {
+            repositories {
+                sonatype{
+                    nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+                    snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
+
+                    // Or use System.getenv?
+                    username=project.property("maven.sonatype.user")
+                    password=project.property("maven.sonatype.password")
+                }
+            }
+}
+
 publishing {
     publications {
-        mavenJava(MavenPublication) {
+        javaPubl(MavenPublication) {
 			artifactId = 'installer'
 			from components.java
+
             pom {
                 name = 'Java-Installer'
                 description = 'A simple installation routine for your Java application'
@@ -107,13 +123,28 @@ publishing {
                 developers {
                     developer {
                         id = 'RPJosh'
-                        name = 'RPJosh'
+                        name = 'Jonas Letzbor'
                         email = 'RPjosh@rpjosh.de'
                     }
                 }
+                scm {
+                	connection = 'scm:git:https://git.rpjosh.de/RPJosh/Java-Installer.git'
+                	developerConnection = 'scm:git:https://git.rpjosh.de/RPJosh/Java-Installer.git'
+                	url = 'https://git.rpjosh.de/RPJosh/Java-Installer'
+                }
             }
         }
+
     }
+}
+
+signing {
+    def signingKey = project.property("maven.sonatype.signing.key")
+    def signingPassword = project.property("maven.sonatype.signing.password")
+    useInMemoryPgpKeys(signingKey, signingPassword)
+
+    // Only sign the publication
+    sign publishing.publications.javaPubl
 }
 
 

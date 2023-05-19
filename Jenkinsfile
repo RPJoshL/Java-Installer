@@ -8,7 +8,17 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                sh './gradlew build publishToMavenLocal --warning-mode all'
+                script {
+                    withCredentials([
+                        file(credentialsId: 'MAVEN_PUBLISH_SONATYPE_GRADLE_PROPERTIES', variable: 'SONATYPE_CREDENTIALS')
+                    ]) {
+                        // Build and publish
+                        sh 'cp \${SONATYPE_CREDENTIALS} ./gradle.properties'
+                        sh './gradlew --no-build-cache build publishToMavenLocal publishToSonatype closeAndReleaseSonatypeStagingRepository --warning-mode all'
+                        sh 'rm ./gradle.properties'
+                    }
+                    
+                }
             }
         }
     }

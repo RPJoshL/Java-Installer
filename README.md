@@ -1,6 +1,6 @@
 # Purpose
 
-This project provides a simple installation tool for installing your java application under the operation systems *windows* and *linux*.  
+This project provides a simple installation tool for installing your java application under the operating systems *windows* and *linux*.  
 
 If you want to use a simple installer instead of the installation method the operating systems ships with (like *msi* or *dpkg packages*) feel free to use this installer.  
 This installer can be used for a **single jar file** with a few dependencies.
@@ -16,17 +16,24 @@ Basic auth for downloading the executable is supported
 * install the program *portable* in a single folder
 * creating a **desktop** and a **start menu** entry with a custom icon
 * a **launch script** for opening the application will be provided
+* put your application into the autostart folder of the operating system *(for GUI applications)*
 
 ### Windows
 
 * besides the removal via the launch script an **uninstall** entry in the *contol center* will also be created
-* install the programm only for the current **user** -> no need of administrator rights
+* install the programm only for the current **user** → no need of administrator rights
 
 ### Linux
 
 * creation of a *systemd* unit file to run the program as a **service**
 
 # Getting started
+
+## How to get
+
+You can build the library by yourself or use the provided version in the [Maven Central Repository](https://central.sonatype.com/artifact/de.rpjosh/installer/1.1.0).
+
+## Usage
 
 The usage of the library is very simple. See the below code snippet for a short example.
 
@@ -45,12 +52,13 @@ conf.setDownloadURLForProgramm(URL, BASIC_AUTH_USER, BASIC_AUTH_PASSWORD);
 Installer installer = new Installer(conf);
 installer.installProgramm(args);
 
-// whether the installation was successful (0) or erroneous (<0)
+// whether the installation was successful (0) or erroneous (>0)
 System.out.println(installer.getResponseCode());
 ```
 ___
 
 For a real life example you can take a look at the installer of [RPdb](https://git.rpjosh.de/RPJosh/RPdb/src/branch/master/Program/Java/tk.rpjosh.rpdb.installer).
+
 
 # License
 This project is licensed under the GPLv3. Please see the [LICENSE](LICENSE) file for an full license.
