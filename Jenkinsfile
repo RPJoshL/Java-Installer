@@ -15,7 +15,7 @@ pipeline {
                     script {
 
                         if (env.GIT_BRANCH != "main" && env.GIT_BRANCH != "master") {
-                            // When not on master only test to build the installer
+                            // Only test to build the installer when we are not on the master branch
                             sh 'gradle --no-build-cache build'
                         } else {
                             withCredentials([

@@ -117,12 +117,12 @@ public class InstallConfig {
 	// ----- //
 	
 	/**
-	 * Creates a configuration object for the installation with all the necessary informations 
+	 * Creates a configuration object for the installation with all the required informations 
 	 * 
-	 * @param company				the name of your company under which the application should be installed
-	 * @param version				the version	
-	 * @param applicationNameShort	the short name of your application
-	 * @param applicationNameLong	the long name of your application
+	 * @param company				Name of your company under which the application should be installed
+	 * @param version				Version	of the application
+	 * @param applicationNameShort	Short name of your application
+	 * @param applicationNameLong	Long name of your application
 	 */
 	public InstallConfig(String company, String version, String applicationNameShort, String applicationNameLong) {
 		
@@ -154,7 +154,7 @@ public class InstallConfig {
     /**
     * When the debug mode is enabled, all error messages will be printed out exactly
     * 
-    * @param debug	if the debug mode should been enabled
+    * @param debug	if the debug mode should be enabled
     */
     public void setDebug(boolean debug) { this.debug = debug; }
     protected boolean getDebug() { return debug; }
@@ -189,9 +189,9 @@ public class InstallConfig {
 	
 	
 	/**
-	 * The given fonts will be installed (the fonts has to be in the format .ttf)
+	 * Setup fonts that should be installed (the fonts has to be in the .ttf format)
 	 * 
-	 * @param fonts		a map with all the fonts: the name without .ttf | location of the fonts within the jar file (with .ttf)
+	 * @param fonts		Map with all the fonts: the name without .ttf | location of the fonts within the jar file (with .ttf)
 	 */
 	public void setFontsToInstall(Map<String, String> fonts) {
 		this.fontsToInstall = fonts;
@@ -200,15 +200,13 @@ public class InstallConfig {
 	protected Map<String, String> getFontsToInstall() { return this.fontsToInstall; }
 	
 	
-	// Executable to install //
-	
 	/**
 	 * Sets the URL of the file to be installed. The executable will be downloaded from the specified URL
 	 * 
-	 * @param url					the URL
-	 * @param basicAuthUser			[ the user for the basic auth ]
-	 * @param basicAuthPassword		[ the password for the basic auth ]
-	 * @param askForBasicAuth		when no basic auth credentials are given and the request gets a 401 response ask the user for credentials at the command line
+	 * @param url					URL
+	 * @param basicAuthUser			Optional: user for the basic auth
+	 * @param basicAuthPassword		Optional: password for the basic auth
+	 * @param askForBasicAuth		When no basic auth credentials are provided and the request returns a 401 response, ask the user for credentials at the command line
 	 */
 	public void setDownloadURLForProgramm(String url, char[] basicAuthUser, char[] basicAuthPassword, boolean askForBasicAuth) {
 		this.downloadURL = url;
@@ -221,11 +219,11 @@ public class InstallConfig {
 	 * Sets the URL of the file to be installed. The executable will be downloaded from the specified URL
 	 * In addition the operation system and the architecture will be added automatically to the URL (_windows_x64, _linux_arm32)
 	 * 
-	 * @param url					die URL (without file extension) 
-	 * @param basicAuthUser			[ the user for the basic auth ]
-	 * @param basicAuthPassword		[ the password for the basic auth ]
-	 * @param askForBasicAuth		when no basic auth credentials are given and the request gets a 401 response ask the user for credentials at the command line
-	 * @param end					die file ending of the file (.jar)
+	 * @param url					URL (without file extension) 
+	 * @param basicAuthUser			Optional: user for the basic auth
+	 * @param basicAuthPassword		Optional: password for the basic auth
+	 * @param askForBasicAuth		When no basic auth credentials are provided and the request returns a 401 response, ask the user for credentials at the command line
+	 * @param end					File ending of the file (.jar)
 	 */
 	public void setDownloadURLForProgramm(String url, char[] basicAuthUser, char[] basicAuthPassword, boolean askForBasicAuth, String end) {
 		this.downloadURL = url;
@@ -239,7 +237,7 @@ public class InstallConfig {
 	/**
 	 * Installs the executable from the local file systems instead of downloading the file
 	 * 
-	 * @param path		the path of the jar file in the file system
+	 * @param path		Path of the jar file in the file system
 	 */
 	public void setDownloadOfflinePath(String path) {
 		this.downloadURL = path;
@@ -255,7 +253,7 @@ public class InstallConfig {
 	/**
 	 * Creates a desktop entry during the installation.
 	 * 
-	 * - Windows: a entry will be created in the public desktop or in the user desktop directory (for a user installation).
+	 * - Windows: an entry will be created in the public desktop or in the user desktop directory (for a user installation).
 	 *            also an entry in the start menu will be created.
 	 * - Linux:   the desktop file will be registered into the start menu.
 	 * 
@@ -286,18 +284,18 @@ public class InstallConfig {
 	public void setDesktopCategories(String categories) { this.desktopCategories = categories; }
 	/**
 	 * [Linux] Sets the keywords for the application (desktop entry)
-	 * @param keywords	the keywords separated by a ';'
+	 * 
+	 * @param keywords	Keywords separated by a ';'
 	 */
 	public void setDesktopKeywords (String keywords) { this.desktopKeywords = keywords; }
 	
 	
-	// Options for the launch of the application //
-	
 	/**
-	 * When the application is launched from the command line, the program will be launched in the foreground normally.
-	 * With the parameter --b can the program be launched in the foreground
+	 * When the application is launched from the command line, the program will automatically be launched in the foreground by default.
+	 * The default behavior in the start script can be configured with this method. 
 	 * 
-	 * @param runInBackground	whether the program should be launched in background by default -{@literal >} for launching it in the foreground the parameter --f is required
+	 * @param runInBackground	Whether to launch the program in background by default -{@literal >} for launching it in the foreground the parameter --f is required.
+	 *                          Otherwise '--b' must be provided
 	 */
 	public void setRunInBackgroundByDefault(boolean runInBackground) {
 		this.launchInBackground = runInBackground;
@@ -308,26 +306,26 @@ public class InstallConfig {
 	 * [Linux] Creates a unit file for systemd. All the given parameters are optional (except startAtBoot).
 	 * For the ..Exec.. parameters and the working directory you can use #~LaunchScript~#, #~AppPath~#, #~ConfigPath~# with a leading slash -{@literal >} /home/myPath/
 	 * 
-	 * @param startAtBoot			 whether the service should start at boot time
-	 * @param unitDescription		 the description of the service
-	 * @param unitAfter				 after which target the service should been started
-	 * @param unitStartLimitBurst    the maximum number of start retries
-     * @param unitStartLimitInterval the interval in seconds in which the maximum number of start retries should been summarized
-	 * @param installWantedBy   	 to which time of the boot process the service should been started -{@literal >} multi-user.target (normal) or graphical.target (when GUI is needed)
-	 * @param installAliasName  	 an alias for the service name
-	 * @param serviceWorkingDir		 the working directory of the service
-	 * @param serviceUser			 the user for the service
-	 * @param serviceGroup			 the group for the service
-	 * @param serviceEnvironment	 the environment variables to set
-	 * @param serviceExecStartPre	 the commands to execute before the service starts. Use {@literal <}LaunchScript{@literal >} to replace it with the real location of the launch script
-	 * @param serviceExecStartPost   the commands to execute after the service has started. Use {@literal <}LaunchScript{@literal >} to replace the location of the launch script
-	 * @param serviceTimeout		 the number of seconds which should been allowed to start / stop the service
-	 * @param serviceType			 the type of the service {@literal >} oneshot, simple, exec and forking
-	 * @param serviceExecStart		 the start command. Please take in mind that only with the type "oneshot" multiple commands can be specified. 
-	 * 								 Use {@literal <}LaunchScript{@literal >} to replace it with the real location of the launch script
-	 * @param serviceExecStop		 the stop command. Use #LaunchScript# to replace the location of the launch script
-	 * @param serviceRestart		 whether the service should been restarted when the execution failed -{@literal >} on-failure or always
-	 * @param serviceRestartSec		 the number of seconds to wait between a restart
+	 * @param startAtBoot			 Whether the service should start at boot time
+	 * @param unitDescription		 Description of the service
+	 * @param unitAfter				 After which target the service should been started
+	 * @param unitStartLimitBurst    Maximum number of start retries
+     * @param unitStartLimitInterval Interval in seconds, in which the maximum number of start retries should been summarized
+	 * @param installWantedBy   	 To which time of the boot process the service should been started -{@literal >} multi-user.target (normal) or graphical.target (when GUI is needed)
+	 * @param installAliasName  	 Alias for the service name
+	 * @param serviceWorkingDir		 Working directory of the service
+	 * @param serviceUser			 User for the service
+	 * @param serviceGroup			 Group for the service
+	 * @param serviceEnvironment	 Environment variables to set
+	 * @param serviceExecStartPre	 Commands to execute before the service starts. Use {@literal <}LaunchScript{@literal >} to replace it with the real location of the launch script
+	 * @param serviceExecStartPost   Commands to execute after the service has started. Use {@literal <}LaunchScript{@literal >} to replace the location of the launch script
+	 * @param serviceTimeout		 Number of seconds to give the program for start / stop
+	 * @param serviceType			 Type of the service {@literal >} oneshot, simple, exec and forking
+	 * @param serviceExecStart		 Start command. Please take in mind that only with the type "oneshot" multiple commands can be specified. 
+	 * 								 Use #~LaunchScript~# to replace it with the real location of the launch script
+	 * @param serviceExecStop		 Stop command. Use #~LaunchScript~# to replace this string with the location of the launch script
+	 * @param serviceRestart		 Whether the service should be restarted when the execution failed -{@literal >} 'on-failure' or 'always'
+	 * @param serviceRestartSec		 Number of seconds to wait between restarts
 	 */
 	public void createServiceUnitFile(
 			boolean startAtBoot, 
@@ -373,18 +371,16 @@ public class InstallConfig {
 	}
 	
 	
-	// Removal options //
-	
 	/**
-	 * [Windows] The estimated size of the whole application which should been displayed to the user
+	 * [Windows] Sets the estimated size of the whole application which should been displayed to the user
 	 * 
-	 * @param estimatedSize		the estimated size in megabyte
+	 * @param estimatedSize		Estimated size in megabyte
 	 */
 	public void setEstimatedSize(double estimatedSize) {
 		this.estimatedSize = (int) (estimatedSize * 1024);
 	}
 	/**
-	 * [Windows] Returns the setted estimates size of the program
+	 * [Windows] Returns the estimates size of the program that was set previously
 	 * @return	the estimated size in bytes
 	 */
 	protected int getEstimatedSize() { return estimatedSize; }
@@ -393,20 +389,17 @@ public class InstallConfig {
 	 * [Windows] Icon for the removal of the application.
 	 * A file (pics/uninstall.ico) will be created.
 	 * 
-	 * @param windowsICO	the path of the .ico file inside of the jar file (e.g. resource/uninstall.ico)
+	 * @param windowsICO	Path of the .ico file inside of the jar file (e.g. resource/uninstall.ico)
 	 */
 	public void setIconForWindowsUninstaller(String windowsICO) {
 		this.createIconForDeletion = true;
 		this.iconForDeletionPath = windowsICO;
 	}
-
-	
-	// Options for the installations //
     
 	/**
 	 * Installs the program portable
 	 * 
-	 * @param dir 	the main directory for the portable installation (e.g. C:/Users/de03710/MyProgram/)
+	 * @param dir 	Main directory for the portable installation (e.g. C:/Users/de03710/MyProgram/)
 	 */
 	public void setPortable(String dir) {
 		
@@ -422,7 +415,7 @@ public class InstallConfig {
 	}
 	
 	/**
-	 * [Windows] Installs the program only for the actual user -{@literal >} administrator rights aren't necessary
+	 * [Windows] Installs the program only for the current user -{@literal >} administrator rights aren't requried
 	 */
 	public void setUserInstallation() {
 		
@@ -433,21 +426,18 @@ public class InstallConfig {
 	}
 	
 	/**
-	 * [Windows] creates a entry in the path variable for the program
-	 * TODO: create Launcher wie unter Linux
+	 * [Windows] Creates an entry in the path variable for the program
 	 */
 	public void createPathEntry() {
 		createPathVariable = true;
 	}
-	
-	
-	// Determine and create the application paths //
+
 	
 	/**
 	 * Returns the path of the desktop
 	 * 
 	 * @return desktop path: /home/user/Desktop/ or C:/User/myUserName/Desktop/.
-	 *		   when no path could been determined, null will be returned
+	 *		   When no path could been determined, null will be returned
 	 */
 	protected String getDesktopDir() {
 		
@@ -523,7 +513,7 @@ public class InstallConfig {
 	/**
 	 * Creates the given directory in the configuration directory
 	 * 
-	 * @param directorys	a list with all the directories to create. This are relative paths -{@literal >} logs/ or config/
+	 * @param directorys	List with all the directories to create. This are relative paths -{@literal >} logs/ or config/
 	 */
 	public void createConfigDirs(List<String> directorys) {
 		
@@ -640,11 +630,11 @@ public class InstallConfig {
 	/**
 	 * Extracts a file from the jar file and copy it to the given path
 	 * 
-	 * @param pathInJar 	the path in the jar file to extract: resource/48x48.png
-	 * @param pathToWrite 	the destination path
-	 * @param logError 		if an error message should be displayed
+	 * @param pathInJar 	Path in the jar file to extract: resource/48x48.png
+	 * @param pathToWrite 	Destination path
+	 * @param logError 		Weather to display an error message
 	 * 
-	 * @return 				if the resource was successfully extracted
+	 * @return 				If the resource was successfully extracted
 	 */
 	protected boolean getResource(String pathInJar, String pathToWrite, boolean logError) {
 		
@@ -668,12 +658,12 @@ public class InstallConfig {
 	}
 	
 	/**
-	 * Extracts a file from the jar file and copy it to the given path
+	 * Extracts a file from the jar file and copies it to the given path
 	 * 
-	 * @param pathInJar 	the path in the jar file to extract: resource/48x48.png
-	 * @param pathToWrite 	the destination path
+	 * @param pathInJar 	Path in the jar file to extract: resource/48x48.png
+	 * @param pathToWrite 	Destination path
 	 * 
-	 * @return 				if the resource was sucessfully extracted
+	 * @return 				if the resource was successfully extracted
 	 */
 	protected boolean getResource(String pathInJar, String pathToWrite) {
 		return getResource(pathInJar, pathToWrite, true);	
@@ -683,7 +673,7 @@ public class InstallConfig {
 	/**
 	 * Returns the path to the actual jar file 
 	 * 
-	 * @return the absolute path to the jar file: C:/Users/myUserName/BeMa.jar.
+	 * @return Absolute path to the jar file: C:/Users/myUserName/BeMa.jar.
 	 * 		   When no jar file was found (when launched in Eclipse) the path to the "extracted" jar file will be returned
 	 */
 	protected String getLocationOfJarFile() {
@@ -706,7 +696,7 @@ public class InstallConfig {
 	/**
 	 * Sets the path to the jar runtime path -{@literal >} overwrite for the portable installation
 	 * 
-	 * @param location		the absolute path to the jar file: C:/Users/de03710/BeMa.jar
+	 * @param location		Absolute path to the jar file: C:/Users/de03710/BeMa.jar
 	 */
 	protected void setLocationOfJarFile(String location) {
 		this.jarRuntimeLocation = location;
@@ -714,7 +704,8 @@ public class InstallConfig {
 	
 	/**
 	 * Sets the maximum heap size the JVM may consume (-Xmx)
-	 * @param sizeInMb	the maximum size in megabyte
+	 * 
+	 * @param sizeInMb	Maximum size in megabyte
 	 */
 	public void setMaxHeapSize(int sizeInMb) {
 		if (sizeInMb < 2) logger.log("w", "The maximum heap size must be greater or equal 2 megabyte", "setMaxHeapSize");
@@ -722,7 +713,8 @@ public class InstallConfig {
 	}
 	/**
 	 * Sets the initial heap size of the JVM (-Xms)
-	 * @param sizeInMb the initial size in megabyte
+	 * 
+	 * @param sizeInMb Initial size in megabyte
 	 */
 	public void setInitialHeapSize(int sizeInMb) {
 			if (sizeInMb < 2) logger.log("w", "The initial heap size must be greater or equal 2 megabyte", "setInitialHeapSize");

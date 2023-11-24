@@ -24,7 +24,7 @@ tasks.withType(Javadoc) {
 sourceCompatibility = 11
 targetCompatibility = 11
 
-// create a single .jar with all dependencies //
+// Create a single .jar with all dependencies
 task fatJar(type: Jar) {
 
 	archiveClassifier = ''
@@ -72,19 +72,19 @@ artifacts {
 }
 
 
-// the created jar file will be copied automatically into the release directory
+// The created jar file will be copied automatically into the release directory
 task copyJar(type: Copy) {
    from file("$buildDir/dist/installer-" + version + ".jar"), file("$buildDir/libs/installer-" + version + "-javadoc.jar"), file("$buildDir/libs/installer-" + version + "-sources.jar")
    into file("$buildDir/../release")
 }
 
-// build the maven repo file structure -> Javadoc can be used easily in eclipse
+// Build the maven repo file structure -> Javadoc can be used easily in eclipse
 task copyJarToMaven (type: Copy) {
    from file("$buildDir/dist/installer-" + version + ".jar"), file("$buildDir/libs/installer-" + version + "-javadoc.jar"), file("$buildDir/libs/installer-" + version + "-sources.jar")
    into file("$buildDir/../release/mavenRepo/de/rpjosh/installer/" + version) 
 }
 
-// publish to local maven repo
+// Publish to local maven repo
 
 java {
     withJavadocJar()
@@ -143,7 +143,7 @@ signing {
     def signingPassword = project.property("maven.sonatype.signing.password")
     useInMemoryPgpKeys(signingKey, signingPassword)
 
-    // Only sign the publication
+    // Only sign the publications
     sign publishing.publications.javaPubl
 }
 
