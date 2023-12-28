@@ -18,6 +18,22 @@ pipeline {
                             // Only test to build the installer when we are not on the master branch
                             sh 'gradle --no-build-cache build'
                         } else {
+
+                            // Get the version to release 
+                            def version = sh (
+						        script: 'git describe --tags --abbrev=0',
+						        returnStdout: true
+					        ).replace("\n", "")
+                            if (version == null || version.allWhitespace) {
+                                error("Commit is not tagged with a version")
+                            }
+                            def versionV = version.replaceFirst("v", "")
+
+                            // Write the version into the version file
+                            sh "echo ${versionV} > VERSION"
+                            echo "Building and publishing version ${versionV}"
+
+                            // Build and publish
                             withCredentials([
                                 file(credentialsId: 'MAVEN_PUBLISH_SONATYPE_GRADLE_PROPERTIES', variable: 'SONATYPE_CREDENTIALS')
                             ]) {
