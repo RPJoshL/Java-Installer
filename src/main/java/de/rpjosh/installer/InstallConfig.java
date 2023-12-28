@@ -405,7 +405,7 @@ public class InstallConfig {
 		
 		this.isPortable = true;
 		this.portableMainDir = dir;
-		this.configDir = dir + "Appdata/";
+		this.configDir = dir + "AppData/";
 		this.applicationDir = dir + "Programm/";
 		
 		isPortable = true;

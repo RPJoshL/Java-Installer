@@ -243,10 +243,12 @@ public class Installer {
 				
 			} else if (InstallConfig.getOsType() == OSType.LINUX) {
 				// If a service was installed previously try to stop it first. This will fail internal when no service was created
-				Process p = new ProcessBuilder("bash", "-c", "systemctl stop \"" + conf.getApplicationNameShort() + ".service" + "\"").start();
-				p.waitFor(5, TimeUnit.SECONDS);
+				if (!conf.getIsPortable()) {
+					Process p = new ProcessBuilder("bash", "-c", "systemctl stop \"" + conf.getApplicationNameShort() + ".service" + "\"").start();
+					p.waitFor(5, TimeUnit.SECONDS);
+				}
 				
-				p = new ProcessBuilder("bash", "-c", "pkill -9 -f '" + conf.getApplicationNameShort() + ".jar'").start();
+				Process p = new ProcessBuilder("bash", "-c", "pkill -9 -f '" + conf.getApplicationNameShort() + ".jar'").start();
 				p.waitFor(5, TimeUnit.SECONDS);
 			}
 		} catch (Exception ex) { /* not required */ }
@@ -1191,7 +1193,7 @@ public class Installer {
 	 * that are only needed in edge cases.
 	 */
 	private void finishInstallation() {
-		if (InstallConfig.getOsType() == OSType.LINUX) {
+		if (InstallConfig.getOsType() == OSType.LINUX && !conf.getIsPortable()) {
 			try {
 				// Try to start a previously installed service again that was stopped during installation
 				Process p = new ProcessBuilder("bash", "-c", "systemctl start \"" + conf.getApplicationNameShort() + ".service" + "\"").start();
