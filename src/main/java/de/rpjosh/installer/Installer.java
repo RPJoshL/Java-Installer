@@ -84,6 +84,7 @@ public class Installer {
 							}
 						}
 						
+						in.close();
 						error = 2; return;
 						
 					} catch (Exception ex) { logger.log("e", ex, "installProgramm"); 
