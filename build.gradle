@@ -10,6 +10,7 @@ plugins {
 
 version = project.file("./VERSION").text.trim()
 def version = project.file("./VERSION").text.trim()
+def publishToNexus = "publishToSonatype" in gradle.startParameter.taskNames
 
 group = "de.rpjosh"
 
@@ -98,8 +99,8 @@ nexusPublishing {
                     snapshotRepositoryUrl.set(uri("https://s01.oss.sonatype.org/content/repositories/snapshots/"))
 
                     // Or use System.getenv?
-                    username=project.property("maven.sonatype.user")
-                    password=project.property("maven.sonatype.password")
+                    username= publishToNexus ? project.property("maven.sonatype.user") : "none"
+                    password= publishToNexus ? project.property("maven.sonatype.password") : "none"
                 }
             }
 }
@@ -139,8 +140,8 @@ publishing {
 }
 
 signing {
-    def signingKey = project.property("maven.sonatype.signing.key")
-    def signingPassword = project.property("maven.sonatype.signing.password")
+    def signingKey = publishToNexus ? project.property("maven.sonatype.signing.key") : ""
+    def signingPassword = publishToNexus ? project.property("maven.sonatype.signing.password") : ""
     useInMemoryPgpKeys(signingKey, signingPassword)
 
     // Only sign the publications
