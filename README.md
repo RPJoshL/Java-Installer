@@ -1,9 +1,9 @@
 # Purpose
 
-This project provides a simple installation tool for installing your java application under the operating systems *windows* and *linux*.  
+This project provides a simple installation tool for installing your java application for the operating systems *windows* and *linux*.  
 
 If you want to use a simple installer instead of the installation method the operating systems ships with (like *msi* or *dpkg packages*) feel free to use this installer.  
-This installer can be used for a **single jar file** with a few dependencies.
+It can be used for a **single jar file** with a few dependencies.
 
 # Features
 
@@ -11,7 +11,7 @@ This installer can be used for a **single jar file** with a few dependencies.
 
 * quiet installation without opening a command prompt
 * installation of **fonts** from the source folder (*.tft*)
-* the executable to install can be downloaded from a webserver.  
+* dynamic download of the jar file from a webserver.  
 Basic auth for downloading the executable is supported
 * install the program *portable* in a single folder
 * creating a **desktop** and a **start menu** entry with a custom icon
@@ -20,8 +20,8 @@ Basic auth for downloading the executable is supported
 
 ### Windows
 
-* besides the removal via the launch script an **uninstall** entry in the *contol center* will also be created
-* install the programm only for the current **user** → no need of administrator rights
+* besides the removal via the launch script an **uninstall** entry in the *contol center* will be created
+* installation of the programm only for the current **user** → no need of administrator rights
 
 ### Linux
 
@@ -31,39 +31,35 @@ Basic auth for downloading the executable is supported
 
 ## How to get
 
-You can build the library by yourself or use the provided version in the [Maven Central Repository](https://central.sonatype.com/artifact/de.rpjosh/installer/1.1.0).
+You can build the library by yourself or use the provided version in the [Maven Central Repository](https://central.sonatype.com/artifact/de.rpjosh/installer).
 
 ## Usage
 
 The usage of the library is very simple. See the below code snippet for a short example.
 
-```
+```java
 InstallConfig conf = new InstallConfig (
     "myCompany", 
     "2.0.0", 
     "MyApplicationName", 
     "My long application name")
 ;
-// now you can specify the various options via the InstallConfig
+// You can specify the various options via the InstallConfig object
 conf.setDownloadURLForProgramm(URL, BASIC_AUTH_USER, BASIC_AUTH_PASSWORD);
 ...   // see the javadoc for more options
 
-// after configuring you can install the application
+// After configuring you can install the application
 Installer installer = new Installer(conf);
 installer.installProgramm(args);
 
-// whether the installation was successful (0) or erroneous (>0)
+// Whether the installation was successful (0) or erroneous (>0)
 System.out.println(installer.getResponseCode());
 ```
-___
-
-For a real life example you can take a look at the installer of [RPdb](https://git.rpjosh.de/RPJosh/RPdb/src/branch/master/Program/Java/tk.rpjosh.rpdb.installer).
-
 
 # License
-This project is licensed under the GPLv3. Please see the [LICENSE](LICENSE) file for an full license.
+This project is licensed under the GPLv3. Please see the [LICENSE](LICENSE) file for a full license.
 
 # Need help?
-You can check out the 📖️ Javadocs for more informations.
+You can check out the 📖️ Javadocs for more information.
 
 If that didn't help you feel free to create an issue or open a pull request 📣️
