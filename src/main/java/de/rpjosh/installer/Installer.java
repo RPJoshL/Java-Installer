@@ -79,7 +79,7 @@ public class Installer {
 						}
 						
 						if (in.ready()) {
-							if (in.readLine().toLowerCase().startsWith("y")) {
+							if (in.readLine().toLowerCase().startsWith("y") || in.readLine().toLowerCase().startsWith("j")) {
 								RunInConsole.start(args, true, true, true);
 							}
 						}
