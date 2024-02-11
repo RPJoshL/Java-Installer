@@ -124,8 +124,8 @@ public class RunInConsole {
             			Process proc = new ProcessBuilder(
             					"pkexec", "--user", "root", 
                     			// By default, the command started by pkexec will run in a minimal and safe environment. This does NOT include the $DISPLAY variable by default.
-                    			// Because the most terminal needs this (and  the XAUTH), we use the env command
-            					"env", "DISPLAY=" + System.getenv("DISPLAY"), "XAUTH=" + System.getenv("XAUTH"), "HOME=" + System.getenv("HOME"),
+                    			// Because the most terminal needs this (and  the XAUTHORITY), we use the env command
+            					"env", "DISPLAY=" + System.getenv("DISPLAY"), "XAUTHORITY=" + System.getenv("XAUTHORITY"), "HOME=" + System.getenv("HOME"),
             					"/bin/sh", "-c", 
             					terminal + " " + terminalCommand + " /bin/sh -c 'java -jar \"" + executableName + "\" " + strArgs 
             				+   (keepOpen ? "; exec sh'" : ";")
